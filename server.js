@@ -4,11 +4,11 @@ var path = require('path');
 var http = require('http').Server(app);
 var fs = require('fs-extra');
 var cookieParser = require('cookie-parser');
+var siofu = require("socketio-file-upload");
 
 
-
-http.listen(3000, function(){
-    console.log('listening on *:3000');
+http.listen(3030, function(){
+    //console.log('listening on *:3000');
   });
 
 var io = require('socket.io').listen(http);
@@ -31,6 +31,8 @@ app.use(session({
         secure: true
     }
 }));
+app.use(siofu.router);
+
 
 app.get('/', function(req, res){
     res.sendFile(__dirname + '/index.html');
@@ -47,14 +49,15 @@ io.on('connection', function(socket){
     //     fs.removeSync(path);
     // });
     
-    socket.join(socket.id);
-    socket.on('upload', function(data) {
-        console.log(data);
-    });
-
+    var uploader = new siofu();
+    uploader.dir = "./public/models";
+    uploader.listen(socket);
+    uploader.on('error', console.error);
 });
 
-app.post('/', function(req, res) {
-    io.sockets.in(req.cookies).emit('upload', JSON.stringify(req.files));
-});
+io.on('error', function(error) {
+    console.log(error);
+})
+
+
 

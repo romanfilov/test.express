@@ -7,7 +7,7 @@ form.setAttribute('method', 'POST');
 form.setAttribute('encType', 'multipart/form-data');
 var upload = document.createElement('input');
 upload.setAttribute('type', 'file');
-upload.setAttribute('name', 'file');
+upload.setAttribute('id', 'file');
 var submit = document.createElement('input');
 submit.setAttribute('type', 'submit');
 
@@ -16,14 +16,17 @@ document.body.appendChild(form);
 form.appendChild(upload);
 form.appendChild(submit);
 
+var uploader = new SocketIOFileUpload(socket);
+uploader.listenOnInput(document.getElementById("file"));
+
 
 form.onsubmit = function(e) {
-    e.preventDefault();
-    var xhr = new XMLHttpRequest();
-    var data = new FormData();
-    data.append('file', upload.files[0]);
-    xhr.open('POST', '/');
-    xhr.send(data);
+    // e.preventDefault();
+    // var xhr = new XMLHttpRequest();
+    // var data = new FormData();
+    // data.append('file', upload.files[0]);
+    // xhr.open('POST', '/');
+    // xhr.send(data);
 }
 
 var scene = new THREE.Scene();
