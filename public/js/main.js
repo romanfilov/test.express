@@ -1,3 +1,4 @@
+<<<<<<< HEAD
 ﻿// DOM ELEMENTS
 // var upload = document.createElement('input');
 // upload.setAttribute('type', 'file');
@@ -45,6 +46,39 @@ var path = 'public/models/cube.obj';
 
 
 /// THREE JS
+=======
+﻿var socket = io();
+
+
+var form = document.createElement('form');
+form.setAttribute('action', '/');
+form.setAttribute('method', 'POST');
+form.setAttribute('encType', 'multipart/form-data');
+var upload = document.createElement('input');
+upload.setAttribute('type', 'file');
+upload.setAttribute('id', 'file');
+var submit = document.createElement('input');
+submit.setAttribute('type', 'submit');
+
+form.className = 'form';
+document.body.appendChild(form);
+form.appendChild(upload);
+form.appendChild(submit);
+
+var uploader = new SocketIOFileUpload(socket);
+uploader.listenOnInput(document.getElementById("file"));
+
+
+form.onsubmit = function(e) {
+    // e.preventDefault();
+    // var xhr = new XMLHttpRequest();
+    // var data = new FormData();
+    // data.append('file', upload.files[0]);
+    // xhr.open('POST', '/');
+    // xhr.send(data);
+}
+
+>>>>>>> f777013e1ff2f950ac336e881c54f9a8a9cdc7bb
 var scene = new THREE.Scene();
 var camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1000);
 camera.position.set(0, 0, 5);
@@ -83,11 +117,15 @@ scene.add( axes  );
 var light = new THREE.AmbientLight( 0xffffff ); // soft white light
 scene.add( light );
 var loader = new THREE.OBJLoader();
+<<<<<<< HEAD
 loadModel(path);
+=======
+>>>>>>> f777013e1ff2f950ac336e881c54f9a8a9cdc7bb
 var models = [];
 var point = null;
 var curModel;
 var obj;
+<<<<<<< HEAD
 
 function loadModel(path) {
     loader.load(
@@ -110,6 +148,31 @@ function loadModel(path) {
            });
         });
 }
+=======
+// loader.load(
+
+//  'models/cube.obj',
+
+//  function (object) {
+//     object.traverse( function( model ) {
+//         if( model instanceof THREE.Mesh ) {
+
+//             model.material.side = THREE.DoubleSide;
+//             model.material.color = new THREE.Color(0xcccccc);
+//             model.material.wireframe = true;
+//             var geometry = new THREE.Geometry ();
+//             geometry.fromBufferGeometry (model.geometry);
+//             geometry.mergeVertices();
+//             //geometry.computeVertexNormals ();
+//             models.push(model);
+//             model.geometry = geometry;
+//         }
+//         scene.add(object);
+//     });
+    
+    
+//  });
+>>>>>>> f777013e1ff2f950ac336e881c54f9a8a9cdc7bb
 
 
 
@@ -117,6 +180,7 @@ function loadModel(path) {
 var raycaster = new THREE.Raycaster();
 var mouse = new THREE.Vector2();
 var points = [];
+<<<<<<< HEAD
 
 ///////// MODELS OBJECT GEOMETRY -> CREATE POINT
 var geometry;
@@ -224,10 +288,48 @@ function transformMouseUp() {
 /////////////// 
 function getPoint(modelIntersects) {
     
+=======
+var geometry;
+var index;
+
+function onMouseClick(e) {
+    var point = null;
+	mouse.x = (e.clientX / window.innerWidth) * 2 - 1;
+    mouse.y = - (e.clientY / window.innerHeight) * 2 + 1;
+    
+    raycaster.setFromCamera(mouse, camera);
+    var modelIntersects = raycaster.intersectObjects(models);
+    var pointIntersects = raycaster.intersectObjects(points);
+    if(pointIntersects.length > 0) {
+        var dragControls = new THREE.DragControls(points, camera, renderer.domElement);
+        dragControls.addEventListener('dragstart', function () {
+            controls.enabled = false;
+        });
+        dragControls.addEventListener('drag', function() {
+            point = pointIntersects[0].object;
+            geometry.vertices[point.index].copy(point.position);
+            geometry.verticesNeedUpdate = true;
+        })
+        dragControls.addEventListener('dragend', function () {
+            controls.enabled = true;
+        });
+    } else if (modelIntersects.length > 0) {
+        point = getPoint(modelIntersects);
+        points.push(point);
+        scene.add(point);
+    }
+}
+
+function getPoint(modelIntersects) {
+>>>>>>> f777013e1ff2f950ac336e881c54f9a8a9cdc7bb
     var face = modelIntersects[0].face.clone();
     geometry = modelIntersects[0].object.geometry;
     var pointCoords = modelIntersects[0].point;
     var faceVertices = [];
+<<<<<<< HEAD
+=======
+    var distance;
+>>>>>>> f777013e1ff2f950ac336e881c54f9a8a9cdc7bb
     geometry.vertices.forEach(function(item, i) {
         if(i == face.a || i == face.b || i == face.c) {
             var selItem = item.clone();
@@ -246,17 +348,26 @@ function getPoint(modelIntersects) {
     point.position.copy(faceVertices[0]);
     point.index = faceVertices[0].index;
     return point;
+<<<<<<< HEAD
 
 }
 
 //////////////////////////////////////// END EDITING MODE
 
+=======
+}
+
+>>>>>>> f777013e1ff2f950ac336e881c54f9a8a9cdc7bb
 function render() {
     requestAnimationFrame(render);
     controls.update();
     renderer.render(scene, camera);
 }
 
+<<<<<<< HEAD
 renderer.domElement.addEventListener('mousedown', onMouseClick);
+=======
+window.addEventListener('mousedown', onMouseClick, false);
+>>>>>>> f777013e1ff2f950ac336e881c54f9a8a9cdc7bb
 
 render();
