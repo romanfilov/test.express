@@ -56,106 +56,114 @@ let path = 'public/models/cube.obj';
 
 
 /// THREE JS
+
+//// Settings 
 const scene = new THREE.Scene();
 const camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1000);
+
+/// camera settings
 camera.position.set(0, 0, 5);
 camera.up.set(0, 0, 1);
+///// end camera settings
+
 const planeGeometry = new THREE.PlaneBufferGeometry(6, 6, 10, 10);
 const planeMaterial = new THREE.MeshLambertMaterial({color: 0x4553c1, transparent: true, opacity:.1, side: THREE.DoubleSide});
 const plane = new THREE.Mesh(planeGeometry, planeMaterial);
 const renderer = new THREE.WebGLRenderer();
-const orbitControls = new THREE.OrbitControls(camera, renderer.domElement);
-const axes = new THREE.AxesHelper( 5 );
-let light = new THREE.AmbientLight( 0xffffff );
-const loader = new THREE.OBJLoader();
 
+///// renderer settings
 renderer.setSize(window.innerWidth, window.innerHeight);
 document.body.appendChild(renderer.domElement);
+renderer.domElement.addEventListener('mousemove', mockEvents);
+/// end renderer settings
+
+const orbitControls = new THREE.OrbitControls(camera, renderer.domElement);
+const axes = new THREE.AxesHelper( 5 );
+const light = new THREE.AmbientLight( 0xffffff );
+const loader = new THREE.OBJLoader();
+/////// End settings
 
 
+// Transformation //
+const transformControl = new THREE.TransformControls(camera, renderer.domElement);
+
+// Transformation end //
+
+
+/// Scene adding
 scene.add(plane);
 scene.add(axes);
 scene.add( light );
-
-
-renderer.domElement.addEventListener('mousemove', mockEvents);
+scene.add(transformControl);
 
 
 
 
+///// Variables
+
+let models = [];
+let point = null;
+let raycaster = new THREE.Raycaster();
+let mouse = new THREE.Vector2();
+let points = [];
+let index;
+let model;
+
+//// end variables
 
 // Load model //
-
-
 loadModel(path);
-var models = [];
-var point = null;
-var curModel;
-var obj;
 
 function loadModel(path) {
     loader.load(
         path,   
         function (object) {
-           object.traverse( function( model ) {
-               if( model instanceof THREE.Mesh ) {
-       
-                   model.material.side = THREE.DoubleSide;
-                   model.material.color = new THREE.Color(0xcccccc);
-                   model.material.wireframe = false;
-                   var geometry = new THREE.Geometry ();
-                   geometry.fromBufferGeometry (model.geometry);
-                   geometry.mergeVertices();
-                   models.push(model);
-                   model.geometry = geometry;
-               }
-               scene.add(object);
-           });
-        });
+            object.traverse( function( model ) {
+                if( model instanceof THREE.Mesh ) {
+        
+                    model.material.side = THREE.DoubleSide;
+                    model.material.color = new THREE.Color(0xcccccc);
+                    model.material.wireframe = false;
+                    var geometry = new THREE.Geometry ();
+                    geometry.fromBufferGeometry (model.geometry);
+                    geometry.center();
+                    geometry.mergeVertices();
+                    models.push(model);
+                    model.geometry = geometry;
+                }
+                scene.add(object);
+            });
+        }
+    );
 }
-
 // End load model //
 
 
-var raycaster = new THREE.Raycaster();
-var mouse = new THREE.Vector2();
-var points = [];
 
-///////// MODELS OBJECT GEOMETRY -> CREATE POINT
-var geometry;
-var index;
-
-/// MODELS FOR TRANFORM CONTROLS
-var model;
-
+let moving;
+let clickToArrow;
+let modelIntersects;
 function onMouseClick(e) {
 	mouse.x = (e.clientX / window.innerWidth) * 2 - 1;
     mouse.y = - (e.clientY / window.innerHeight) * 2 + 1;
+    clickToArrow = false;
+    moving = false;
     //////////////////
-    ////////////// ROTATION MODE
+    ////////////// transform mode
     ////////////////////
     raycaster.setFromCamera(mouse, camera);
-    var modelIntersects = raycaster.intersectObjects(models);
+    modelIntersects = raycaster.intersectObjects(models);
     if(modelIntersects.length > 0) {
-
         model = modelIntersects[0].object;
         transformControl.attach(model);
-
-        scene.add(transformControl);
-    } else {
-        transformControl.detach();
     }
 
-    
-////////////// END TRANSFORM CONTROLS /////////////////
-
+    ////// end transform
 
     /////////////////
-    ////////// EDITING MODE
+    ////////// editing mode
     //////////////////////
 
-    // var point = null;
-    // raycaster.setFromCamera(mouse, camera);
     // if(geometry) {
     //     geometry.boundingBox = null;
     //     geometry.boundingSphere = null;
@@ -188,44 +196,20 @@ function onMouseClick(e) {
     //     }
     // }
 
-    ///////////////////////////////////////////////////
-
-
+    ///////////// end editing mode
 }
 
 
-///////////////
-///////////// TRANSFORM CONTROLS AND HANDLERS
-
-// Transformation //
-
-var transformControl = new THREE.TransformControls(camera, renderer.domElement);
-
-
-
-// handlers //
-function transformMouseDown() {
-    orbitControls.enabled = false;
-}
-
-function transformMouseUp() {
-    orbitControls.enabled = true;
-}
-
-// Transformation end //
-
-///////////////////////////
-/////////////////////////////////////
 
 /////////
 ////// EDITING MODE CREATE POINT
 /////////////// 
 function getPoint(modelIntersects) {
     
-    var face = modelIntersects[0].face.clone();
-    geometry = modelIntersects[0].object.geometry;
-    var pointCoords = modelIntersects[0].point;
-    var faceVertices = [];
+    let face = modelIntersects[0].face.clone();
+    model.geometry = modelIntersects[0].object.geometry;
+    let pointCoords = modelIntersects[0].point;
+    let faceVertices = [];
     geometry.vertices.forEach(function(item, i) {
         if(i == face.a || i == face.b || i == face.c) {
             var selItem = item.clone();
@@ -255,14 +239,35 @@ function render() {
     renderer.render(scene, camera);
 }
 
+// handlers //
+function transformMouseDown() {
+    orbitControls.enabled = false;
+}
+function transformMouseUp() {
+    clickToArrow = true;
+    orbitControls.enabled = true;
+}
+
+function onMouseMoving() {
+    moving = true;
+}
+
+function detachTransform() {
+    if(modelIntersects.length === 0 && !clickToArrow && !moving) {
+        transformControl.detach();
+    }
+}
+
 function retoreEvents(ev) {
     ev.stopPropagation = stopPropagationMock;
 }
 
+
 // events //
-transformControl.addEventListener('mouseUp', transformMouseUp);
 transformControl.addEventListener('mouseDown', transformMouseDown);
-
+transformControl.addEventListener('mouseUp', transformMouseUp);
+renderer.domElement.addEventListener('mousedown', onMouseClick);
 renderer.domElement.addEventListener('mousemove', retoreEvents);
-
+renderer.domElement.addEventListener('mousemove', onMouseMoving);
+renderer.domElement.addEventListener('mouseup', detachTransform);
 render();
