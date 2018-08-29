@@ -59,19 +59,23 @@ let path = 'public/models/cube.obj';
 
 //// Settings 
 const scene = new THREE.Scene();
-const camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1000);
+scene.background = new THREE.Color(0xffffff);
 
 /// camera settings
+const camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1000);
 camera.position.set(0, 0, 5);
 camera.up.set(0, 0, 1);
 ///// end camera settings
 
-const planeGeometry = new THREE.PlaneBufferGeometry(6, 6, 10, 10);
-const planeMaterial = new THREE.MeshLambertMaterial({color: 0x4553c1, transparent: true, opacity:.1, side: THREE.DoubleSide});
-const plane = new THREE.Mesh(planeGeometry, planeMaterial);
-const renderer = new THREE.WebGLRenderer();
+const size = 100;
+const divisions = 100;
+const gridHelper = new THREE.GridHelper( size, divisions, 0x111111, 0xf6f2f1 );
+gridHelper.rotation.x = Math.PI / 2;
+
+
 
 ///// renderer settings
+const renderer = new THREE.WebGLRenderer();
 renderer.setSize(window.innerWidth, window.innerHeight);
 document.body.appendChild(renderer.domElement);
 renderer.domElement.addEventListener('mousemove', mockEvents);
@@ -91,7 +95,7 @@ const transformControl = new THREE.TransformControls(camera, renderer.domElement
 
 
 /// Scene adding
-scene.add(plane);
+scene.add( gridHelper );
 scene.add(axes);
 scene.add( light );
 scene.add(transformControl);
