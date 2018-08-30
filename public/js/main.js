@@ -130,7 +130,9 @@ let mouse = new THREE.Vector2();
 let points = [];
 let index;
 let model;
-
+let moving;
+let clickToArrow;
+let modelIntersects;
 //// end variables
 
 // Load model //
@@ -162,9 +164,7 @@ function loadModel(path) {
 
 
 
-let moving;
-let clickToArrow;
-let modelIntersects;
+
 function onMouseClick(e) {
 	mouse.x = (e.clientX / window.innerWidth) * 2 - 1;
     mouse.y = - (e.clientY / window.innerHeight) * 2 + 1;
@@ -284,6 +284,11 @@ function retoreEvents(ev) {
     ev.stopPropagation = stopPropagationMock;
 }
 
+function onResizeWindow() {
+    renderer.setSize(window.innerWidth, window.innerHeight);
+    camera.aspect = window.innerWidth / window.innerHeight;
+    camera.updateProjectionMatrix();
+}
 
 // events //
 transformControl.addEventListener('mouseDown', transformMouseDown);
@@ -292,4 +297,5 @@ renderer.domElement.addEventListener('mousedown', onMouseClick);
 renderer.domElement.addEventListener('mousemove', retoreEvents);
 renderer.domElement.addEventListener('mousemove', onMouseMoving);
 renderer.domElement.addEventListener('mouseup', detachTransform);
+window.addEventListener('resize', onResizeWindow);
 render();
