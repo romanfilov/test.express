@@ -1,9 +1,9 @@
 ﻿// DOM ELEMENTS
 
-// var upload = document.createElement('input');
-// upload.setAttribute('type', 'file');
-// upload.setAttribute('id', 'upload');
-// document.body.appendChild(upload);
+var upload = document.createElement('input');
+upload.setAttribute('type', 'file');
+upload.setAttribute('id', 'upload');
+document.body.appendChild(upload);
 // var update = document.createElement('button');
 // update.setAttribute('id', 'update');
 // document.body.appendChild(update);
@@ -28,8 +28,19 @@ let socket = io();
 
 /////// ADD AFTER CONFIG SAVING NEW MODEL
 
-// var uploader = new SocketIOFileUpload(socket);
-// uploader.listenOnInput(document.getElementById("upload"));
+let uploader = new SocketIOFileUpload(socket);
+uploader.listenOnInput(document.getElementById("upload"));
+uploader.addEventListener('choose', function(ev){
+    var isNeedExt = /\.obj$|\.stl$/.test(ev.files[0].name);
+    if(!isNeedExt) {
+        console.error('Wrong file extension');
+        return false;
+    }
+});
+
+uploader.addEventListener('complete', function(ev) {
+    console.log(ev);
+});
 // socket.on('onsaved', function(file) {
 //     loadModel(file.pathName);
 // });
@@ -68,22 +79,27 @@ camera.up.set(0, 0, 1);
 ///// end camera settings
 
 const size = 100;
-const divisions = 100;
-const gridHelper = new THREE.GridHelper( size, divisions, 0x111111, 0xf6f2f1 );
+const divisions = 10;
+const gridHelper = new THREE.GridHelper( size, divisions, 0x292929, 0xf0f0f0 );
 gridHelper.rotation.x = Math.PI / 2;
 
 
-
 ///// renderer settings
-const renderer = new THREE.WebGLRenderer();
+const renderer = new THREE.WebGLRenderer({antialias: true});
 renderer.setSize(window.innerWidth, window.innerHeight);
+renderer.setPixelRatio(window.devicePixelRatio);
+renderer.shadowMap.enabled = true;
 document.body.appendChild(renderer.domElement);
 renderer.domElement.addEventListener('mousemove', mockEvents);
 /// end renderer settings
 
 const orbitControls = new THREE.OrbitControls(camera, renderer.domElement);
 const axes = new THREE.AxesHelper( 5 );
-const light = new THREE.AmbientLight( 0xffffff );
+const pointLight = new THREE.PointLight(0xffffff, 0.5);
+const ambientLight = new THREE.AmbientLight(0xffffff, 0.3);
+pointLight.position.set(1000, 500, 0);
+const pointLight2 = new THREE.PointLight(0xffffff, 0.5);
+pointLight2.position.set(-1000, -500, 0);
 const loader = new THREE.OBJLoader();
 /////// End settings
 
@@ -97,7 +113,9 @@ const transformControl = new THREE.TransformControls(camera, renderer.domElement
 /// Scene adding
 scene.add( gridHelper );
 scene.add(axes);
-scene.add( light );
+scene.add( pointLight );
+scene.add( pointLight2 );
+scene.add(ambientLight)
 scene.add(transformControl);
 
 
@@ -116,7 +134,7 @@ let model;
 //// end variables
 
 // Load model //
-loadModel(path);
+//loadModel(path);
 
 function loadModel(path) {
     loader.load(
@@ -124,12 +142,12 @@ function loadModel(path) {
         function (object) {
             object.traverse( function( model ) {
                 if( model instanceof THREE.Mesh ) {
-        
+                    let material = new THREE.MeshLambertMaterial({color: 'blue'})
+                    model.material = material;
                     model.material.side = THREE.DoubleSide;
-                    model.material.color = new THREE.Color(0xcccccc);
                     model.material.wireframe = false;
-                    var geometry = new THREE.Geometry ();
-                    geometry.fromBufferGeometry (model.geometry);
+                    let geometry = new THREE.Geometry ();
+                    geometry.fromBufferGeometry(model.geometry);
                     geometry.center();
                     geometry.mergeVertices();
                     models.push(model);

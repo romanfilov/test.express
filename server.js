@@ -51,18 +51,15 @@ io.on('connection', function(socket){
     // socket.on('disconnect', function(){
     //     fs.removeSync(path);
     // });
-    // var uploader = new siofu();
-    // uploader.dir = './public/users/'+ socket.id +'/models';
-    // uploader.listen(socket);
+    var uploader = new siofu();
+    uploader.dir = './public/models';
+    uploader.listen(socket);
 
-    // uploader.on('saved', function(event){
-    //     socket.emit('onsaved', event.file);
-    // });
+
     
-
-    // uploader.on("error", function(event){
-    //     console.log("Error from uploader", event);
-    // });
+    uploader.on("error", function(event){
+        console.log("Error from uploader", event);
+    });
 
     /////////////////////////////////////////
 
