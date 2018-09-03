@@ -3,35 +3,43 @@
 <head>
     <meta charset=utf-8>
     <title>Mesh</title>
-
-    <style>
-        body {
-            margin: 0;
-        }
-
-        canvas {
-            width: 100%;
-            height: 100%;
-        }
-        #upload {
-            position: absolute;
-            top: 20px;
-            left: 10px;
-        }
-        
-
-        #mode {
-            position: absolute;
-            top: 20px;
-            left: 50px;
-        
-        }
-    </style>
+    <link rel="stylesheet" type="text/css" href="@fortawesome\fontawesome-free\css\all.min.css">
+    <link rel="stylesheet" type="text/css" href="public/css/main.css">
 </head>
 <body>
- 
+    <button class="open-side-menu btn">
+        <span class="open-side-menu__text">Open Menu</span>
+        <i class="fas fa-arrow-right open-side-menu__icon icon"></i>
+    </button>
+    <div class="side-menu">
+        <div class="side-menu__header">
+            <img src="#" alt="logo" class="side-menu__logo">
+            <p class="side-menu__header-text">Cloud Mesh Editor</p>
+            <button class="close-side-menu btn">
+                <i class="fas fa-times icon"></i>
+            </button>
+        </div>
+        <div class="side-menu__content">
+            <div class="models">
+                <div class="model first-model">
+                    <p class="model__name">box</p>
+                    <div class="model__mode">
+                        <button data-mode="translate" class="btn model__mode-btn model__translation"><i class="fas fa-expand-arrows-alt model__mode-icon icon"></i>Translate</button>
+                        <button data-mode="rotate" class="btn model__mode-btn model__rotation active-mode"><i class="fas fa-sync model__mode-icon icon"></i>Rotate</button>
+                        <button data-mode="scale" class="btn model__mode-btn model__scaling"><i class="fas fa-expand model__mode-icon icon"></i>Scale</button>
+                        <button data-mode="edit" class="btn model__mode-btn model__editing"><i class="fas fa-arrows-alt model__mode-icon icon"></i>Edit</button>
+                    </div>
+                </div>
+            </div>
+            <div class="side-menu__upload-field upload-field">
+                <i class="fas fa-file-upload upload-field__icon"></i>
+                <p class="upload-field__text">Upload file (only .obj and .stl)</p>
+                <input type="file" class="upload" id="upload">
+            </div>
+        </div>
+    </div>
 </body>
-<script type="text/javascript" src="build/three.min.js"></script>
+<script type="text/javascript" src="build/three.js"></script>
 <script type="text/javascript" src="examples/js/controls/OrbitControls.js"></script>
 <script type="text/javascript" src="examples/js/loaders/OBJLoader.js"></script>
 <script type="text/javascript" src="examples/js/controls/DragControls.js"></script>
@@ -39,6 +47,4 @@
 <script type="text/javascript" src="socket.io-client/dist/socket.io.js"></script>
 <script src="/siofu/client.js"></script>
 <script type="text/javascript" src="public/js/main.js"></script>
-
-
 </html>

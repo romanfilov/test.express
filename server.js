@@ -1,11 +1,12 @@
-var express = require("express");
-var app = express();
-var path = require('path');
-var http = require('http').createServer(app);
-var fs = require('fs-extra');
+let express = require("express");
+let app = express();
+let path = require('path');
+let http = require('http').createServer(app);
+let fs = require('fs-extra');
 //var cookieParser = require('cookie-parser');
-var siofu = require('socketio-file-upload');
-var io = require('socket.io').listen(http);
+let siofu = require('socketio-file-upload');
+let io = require('socket.io').listen(http);
+
 // var session = require('express-session');
 // var fileUpload = require('express-fileupload');
 
@@ -19,17 +20,7 @@ http.listen(3000, function(){
 app.use(express.static(path.join(__dirname)));
 app.use(express.static('node_modules/three'));
 app.use(express.static('node_modules')); 
-// app.use(session({
-//     secret: 'secretKey',
-//     key: 'sid',
-//     saveUninitialized: false,
-//     resave: true,
-//     cookie: {
-//         httpOnly: true,
-//         secure: true,
-//         maxAge: null
-//     }
-// }));
+
 app.use(siofu.router);
 
 

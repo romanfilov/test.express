@@ -1,27 +1,40 @@
 ﻿// DOM ELEMENTS
-
-var upload = document.createElement('input');
-upload.setAttribute('type', 'file');
-upload.setAttribute('id', 'upload');
-document.body.appendChild(upload);
-// var update = document.createElement('button');
-// update.setAttribute('id', 'update');
-// document.body.appendChild(update);
-
-// var mode = document.createElement('button');
-// mode.flag = false;
-// mode.value = 'scaling';
-// mode.innerHTML = mode.value;
-// mode.setAttribute('id', 'mode');
-// document.body.appendChild(mode);
-
-// mode.onclick = function(e) {
-//     mode.flag ? mode.value = 'scaling' : mode.value = 'editing';
-//     mode.innerHTML = mode.value;
-//     mode.flag = !mode.flag;
-// }
-
+let openMenu = document.querySelector('.open-side-menu');
+let sideMenu = document.querySelector('.side-menu');
+let closeMenu = document.querySelector('.close-side-menu');
+let mode = document.querySelector('.model__mode');
+let upload = document.getElementById('.upload');
 /// END DOM ELEMENTS
+
+
+/// handlers DOM elements
+openMenu.onclick = function() {
+    sideMenu.style.left = 0;
+    sideMenu.style.opacity = 1;
+}
+closeMenu.onclick = function () {
+    sideMenu.style.left = -400 + 'px';
+    sideMenu.style.opacity = 0;
+}
+mode.onclick = function(ev) {
+    if(ev.target === this) return;
+    switch(ev.target.closest('.model__mode-btn').getAttribute('data-mode')) {
+        case 'edit':
+            setMode('edit');
+            break;
+        case 'translate':
+            setMode('translate');
+            break;
+        case 'rotate':
+            setMode('rotate');
+            break;
+        case 'scale':
+            setMode('scale');
+            break;
+    }
+}
+
+//// end handlers DOM elements
 
 // SOCKET
 let socket = io();
@@ -133,10 +146,13 @@ let model;
 let moving;
 let clickToArrow;
 let modelIntersects;
+let geometry;
+let vertices;
+var dragControls = new THREE.DragControls(points, camera, renderer.domElement);
 //// end variables
 
 // Load model //
-//loadModel(path);
+loadModel(path);
 
 function loadModel(path) {
     loader.load(
@@ -154,69 +170,97 @@ function loadModel(path) {
                     geometry.mergeVertices();
                     models.push(model);
                     model.geometry = geometry;
+                    vertices = model.geometry.vertices;
                 }
                 scene.add(object);
             });
         }
     );
 }
+
+
+// ////////////////
+//     //////////// transform mode
+//     //////////////////
+
+//     if(modelIntersects.length > 0) {
+//         model = modelIntersects[0].object;
+//         transformControl.attach(model);
+//     }
+
+//     //// end transform
 // End load model //
 
+function setMode(mode) {
+    switch(mode) {
+        case 'edit':
+            setEditMode(true);
+            break;
+        default:
+            setEditMode(false);
+            transformControl.setMode(mode);
+    }
+}
 
-
+var editModeActive = false;
+function setEditMode(activate) {
+    editModeActive = activate;
+    // detach translate shit
+    if (activate) {
+        transformControl.detach();
+    } else {
+        transformControl.attach(model);
+    }
+}
 
 function onMouseClick(e) {
 	mouse.x = (e.clientX / window.innerWidth) * 2 - 1;
     mouse.y = - (e.clientY / window.innerHeight) * 2 + 1;
     clickToArrow = false;
     moving = false;
-    //////////////////
-    ////////////// transform mode
-    ////////////////////
+    
     raycaster.setFromCamera(mouse, camera);
     modelIntersects = raycaster.intersectObjects(models);
-    if(modelIntersects.length > 0) {
+    ///////////////
+    //////// editing mode
+    ////////////////////
+
+    if (editModeActive) {
+        if (geometry) {
+            geometry.boundingBox = null;
+            geometry.boundingSphere = null;
+        }
+        var pointIntersects = raycaster.intersectObjects(points);
+        if (pointIntersects.length > 0) {
+            dragControls.addEventListener('drag', function() {
+                point = pointIntersects[0].object;
+                geometry.vertices[point.index].copy(point.position);
+                geometry.verticesNeedUpdate = true;
+                geometry.elementsNeedUpdate = true;
+            })
+        } else if (points.length > 0 && pointIntersects.length === 0) {
+            model.remove(scene.getObjectByName('point'));
+            points.pop();
+        }  
+        
+        if (points.length == 0 && modelIntersects.length > 0) {
+            modelIntersects[0].object.worldToLocal(modelIntersects[0].point);
+            point = getPoint(modelIntersects);
+            if(point) {
+                dragControls.addEventListener('dragstart', function () {
+                    orbitControls.enabled = false;
+                });
+                dragControls.addEventListener('dragend', function () {
+                    orbitControls.enabled = true;
+                });
+                points.push(point);
+                model.add(point);
+            }
+        }
+    } else if (modelIntersects.length > 0) {
         model = modelIntersects[0].object;
         transformControl.attach(model);
     }
-
-    ////// end transform
-
-    /////////////////
-    ////////// editing mode
-    //////////////////////
-
-    // if(geometry) {
-    //     geometry.boundingBox = null;
-    //     geometry.boundingSphere = null;
-    // }
-    // var modelIntersects = raycaster.intersectObjects(models);
-    // var pointIntersects = raycaster.intersectObjects(points);
-    // if(pointIntersects.length > 0) {
-    //     dragControls.addEventListener('drag', function() {
-    //         point = pointIntersects[0].object;
-    //         geometry.vertices[point.index].copy(point.position);
-    //         geometry.verticesNeedUpdate = true;
-    //     })
-    // } else if (points.length > 0 && pointIntersects.length === 0) {
-    //     scene.remove(scene.getObjectByName('point'));
-    //     points.pop();
-    // }  
-    
-    // if (points.length == 0 && modelIntersects.length > 0) {
-    //     point = getPoint(modelIntersects);
-    //     if(point) {
-    //         dragControls = new THREE.DragControls(points, camera, renderer.domElement);
-    //         dragControls.addEventListener('dragstart', function () {
-    //             controls.enabled = false;
-    //         });
-    //         dragControls.addEventListener('dragend', function () {
-    //             controls.enabled = true;
-    //         });
-    //         points.push(point);
-    //         scene.add(point);
-    //     }
-    // }
 
     ///////////// end editing mode
 }
@@ -229,7 +273,7 @@ function onMouseClick(e) {
 function getPoint(modelIntersects) {
     
     let face = modelIntersects[0].face.clone();
-    model.geometry = modelIntersects[0].object.geometry;
+    geometry = modelIntersects[0].object.geometry;
     let pointCoords = modelIntersects[0].point;
     let faceVertices = [];
     geometry.vertices.forEach(function(item, i) {
@@ -249,6 +293,7 @@ function getPoint(modelIntersects) {
     point.name = 'point';
     point.position.copy(faceVertices[0]);
     point.index = faceVertices[0].index;
+    point.scale.divide(model.scale);
     return point;
 
 }
@@ -264,10 +309,18 @@ function render() {
 // handlers //
 function transformMouseDown() {
     orbitControls.enabled = false;
+    model.remove(point);
 }
 function transformMouseUp() {
     clickToArrow = true;
     orbitControls.enabled = true;
+    model.updateMatrix();
+    //model.geometry.applyMatrix(model.matrixWorld);
+    //model.geometry.center();
+    //model.parent.applyMatrix(model.matrixWorld);
+    model.geometry.verticesNeedUpdate = true;
+    model.geometry.elementsNeedUpdate = true;
+    //model.position.copy( model.geometry.boundingSphere.center );
 }
 
 function onMouseMoving() {
@@ -290,9 +343,14 @@ function onResizeWindow() {
     camera.updateProjectionMatrix();
 }
 
+function transformChange() {
+    
+}
+
 // events //
 transformControl.addEventListener('mouseDown', transformMouseDown);
 transformControl.addEventListener('mouseUp', transformMouseUp);
+transformControl.addEventListener('objectChange', transformChange);
 renderer.domElement.addEventListener('mousedown', onMouseClick);
 renderer.domElement.addEventListener('mousemove', retoreEvents);
 renderer.domElement.addEventListener('mousemove', onMouseMoving);

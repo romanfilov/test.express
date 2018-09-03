@@ -14,6 +14,8 @@
     "three": "^0.95.0"
   },
   "devDependencies": {
+    "@fortawesome/fontawesome-free": "^5.3.1",
+    "node-sass": "^4.9.3",
     "webpack": "^4.16.5"
   },
   "scripts": {
