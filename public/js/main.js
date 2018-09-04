@@ -3,6 +3,7 @@ let openMenu = document.querySelector('.open-side-menu');
 let sideMenu = document.querySelector('.side-menu');
 let closeMenu = document.querySelector('.close-side-menu');
 let mode = document.querySelector('.model__mode');
+let modeButtons = document.querySelectorAll('.model__mode-btn');
 let upload = document.getElementById('.upload');
 /// END DOM ELEMENTS
 
@@ -18,6 +19,10 @@ closeMenu.onclick = function () {
 }
 mode.onclick = function(ev) {
     if(ev.target === this) return;
+    [].forEach.call(modeButtons, function(el) {
+        el.classList.remove('active-mode');
+    });
+    ev.target.closest('.model__mode-btn').classList.add('active-mode');
     switch(ev.target.closest('.model__mode-btn').getAttribute('data-mode')) {
         case 'edit':
             setMode('edit');
@@ -44,19 +49,16 @@ let socket = io();
 let uploader = new SocketIOFileUpload(socket);
 uploader.listenOnInput(document.getElementById("upload"));
 uploader.addEventListener('choose', function(ev){
-    var isNeedExt = /\.obj$|\.stl$/.test(ev.files[0].name);
-    if(!isNeedExt) {
+    var isRightExt = /\.obj$|\.stl$/.test(ev.files[0].name);
+    if(!isRightExt) {
         console.error('Wrong file extension');
         return false;
     }
 });
 
 uploader.addEventListener('complete', function(ev) {
-    console.log(ev);
+    loadModel(ev.detail.path);
 });
-// socket.on('onsaved', function(file) {
-//     loadModel(file.pathName);
-// });
 
 ////////////// END SOCKET
 
@@ -130,7 +132,7 @@ scene.add( pointLight );
 scene.add( pointLight2 );
 scene.add(ambientLight)
 scene.add(transformControl);
-
+// end scene adding
 
 
 
@@ -146,14 +148,13 @@ let model;
 let moving;
 let clickToArrow;
 let modelIntersects;
+let pointIntersects;
 let geometry;
 let vertices;
-var dragControls = new THREE.DragControls(points, camera, renderer.domElement);
+let dragControls = new THREE.DragControls(points, camera, renderer.domElement);
 //// end variables
 
 // Load model //
-loadModel(path);
-
 function loadModel(path) {
     loader.load(
         path,   
@@ -170,26 +171,12 @@ function loadModel(path) {
                     geometry.mergeVertices();
                     models.push(model);
                     model.geometry = geometry;
-                    vertices = model.geometry.vertices;
                 }
                 scene.add(object);
             });
         }
     );
 }
-
-
-// ////////////////
-//     //////////// transform mode
-//     //////////////////
-
-//     if(modelIntersects.length > 0) {
-//         model = modelIntersects[0].object;
-//         transformControl.attach(model);
-//     }
-
-//     //// end transform
-// End load model //
 
 function setMode(mode) {
     switch(mode) {
@@ -205,7 +192,6 @@ function setMode(mode) {
 var editModeActive = false;
 function setEditMode(activate) {
     editModeActive = activate;
-    // detach translate shit
     if (activate) {
         transformControl.detach();
     } else {
@@ -230,31 +216,30 @@ function onMouseClick(e) {
             geometry.boundingBox = null;
             geometry.boundingSphere = null;
         }
-        var pointIntersects = raycaster.intersectObjects(points);
+        pointIntersects = raycaster.intersectObjects(points);
         if (pointIntersects.length > 0) {
-            dragControls.addEventListener('drag', function() {
-                point = pointIntersects[0].object;
-                geometry.vertices[point.index].copy(point.position);
+            dragControls.addEventListener('drag', function(ev) {;
+                geometry.vertices[point.index].copy(model.worldToLocal(point.position.clone()));
                 geometry.verticesNeedUpdate = true;
                 geometry.elementsNeedUpdate = true;
             })
         } else if (points.length > 0 && pointIntersects.length === 0) {
-            model.remove(scene.getObjectByName('point'));
+            scene.remove(scene.getObjectByName('point'));
             points.pop();
         }  
-        
         if (points.length == 0 && modelIntersects.length > 0) {
-            modelIntersects[0].object.worldToLocal(modelIntersects[0].point);
+            model = modelIntersects[0].object;
             point = getPoint(modelIntersects);
             if(point) {
                 dragControls.addEventListener('dragstart', function () {
                     orbitControls.enabled = false;
+                    point.material.color.setHex(0xc10416);
                 });
                 dragControls.addEventListener('dragend', function () {
                     orbitControls.enabled = true;
                 });
                 points.push(point);
-                model.add(point);
+                scene.add(point);
             }
         }
     } else if (modelIntersects.length > 0) {
@@ -271,10 +256,9 @@ function onMouseClick(e) {
 ////// EDITING MODE CREATE POINT
 /////////////// 
 function getPoint(modelIntersects) {
-    
     let face = modelIntersects[0].face.clone();
     geometry = modelIntersects[0].object.geometry;
-    let pointCoords = modelIntersects[0].point;
+    let pointCoords = model.worldToLocal(modelIntersects[0].point);
     let faceVertices = [];
     geometry.vertices.forEach(function(item, i) {
         if(i == face.a || i == face.b || i == face.c) {
@@ -291,9 +275,8 @@ function getPoint(modelIntersects) {
     })
     point = new THREE.Mesh( new THREE.SphereGeometry(0.1), new THREE.MeshBasicMaterial({color: 0x404040}));
     point.name = 'point';
-    point.position.copy(faceVertices[0]);
+    point.position.copy(model.localToWorld(faceVertices[0]));
     point.index = faceVertices[0].index;
-    point.scale.divide(model.scale);
     return point;
 
 }
@@ -314,13 +297,6 @@ function transformMouseDown() {
 function transformMouseUp() {
     clickToArrow = true;
     orbitControls.enabled = true;
-    model.updateMatrix();
-    //model.geometry.applyMatrix(model.matrixWorld);
-    //model.geometry.center();
-    //model.parent.applyMatrix(model.matrixWorld);
-    model.geometry.verticesNeedUpdate = true;
-    model.geometry.elementsNeedUpdate = true;
-    //model.position.copy( model.geometry.boundingSphere.center );
 }
 
 function onMouseMoving() {
@@ -343,14 +319,11 @@ function onResizeWindow() {
     camera.updateProjectionMatrix();
 }
 
-function transformChange() {
-    
-}
+// end handlers //
 
 // events //
 transformControl.addEventListener('mouseDown', transformMouseDown);
 transformControl.addEventListener('mouseUp', transformMouseUp);
-transformControl.addEventListener('objectChange', transformChange);
 renderer.domElement.addEventListener('mousedown', onMouseClick);
 renderer.domElement.addEventListener('mousemove', retoreEvents);
 renderer.domElement.addEventListener('mousemove', onMouseMoving);

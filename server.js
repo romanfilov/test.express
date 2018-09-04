@@ -3,12 +3,8 @@ let app = express();
 let path = require('path');
 let http = require('http').createServer(app);
 let fs = require('fs-extra');
-//var cookieParser = require('cookie-parser');
 let siofu = require('socketio-file-upload');
 let io = require('socket.io').listen(http);
-
-// var session = require('express-session');
-// var fileUpload = require('express-fileupload');
 
 
 http.listen(3000, function(){
@@ -32,30 +28,21 @@ app.get('/', function(req, res){
 
 
 io.on('connection', function(socket){
-
-
-    // ADD AFTER CONFIG SAVE NEW MODEL
-
-    // var path = './public/users/' + socket.id;
-    // fs.mkdirsSync(path + '/models');
-    // var uploader = new siofu();
-    // socket.on('disconnect', function(){
-    //     fs.removeSync(path);
-    // });
+    var path = './public/users/' + socket.id;
+    fs.mkdirsSync(path + '/models');
     var uploader = new siofu();
-    uploader.dir = './public/models';
+    socket.on('disconnect', function(){
+        fs.removeSync(path);
+    });
+    var uploader = new siofu();
+    uploader.dir = path + '/models';
     uploader.listen(socket);
-
-
-    
+    uploader.on('complete', function(ev) {
+        ev.file.clientDetail.path = ev.file.pathName;
+    });
     uploader.on("error", function(event){
         console.log("Error from uploader", event);
     });
-
-    /////////////////////////////////////////
-
-
-
 });
 
 
