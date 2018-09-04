@@ -4,30 +4,28 @@
     <meta charset=utf-8>
     <title>Mesh</title>
     <link rel="stylesheet" type="text/css" href="@fortawesome\fontawesome-free\css\all.min.css">
+    <link rel="stylesheet" type="text/css" href="bootstrap\dist\css\bootstrap.min.css">
     <link rel="stylesheet" type="text/css" href="public/css/main.css">
 </head>
 <body>
-    <button class="open-side-menu btn">
-        <span class="open-side-menu__text">Open Menu</span>
-        <i class="fas fa-arrow-right open-side-menu__icon icon"></i>
-    </button>
     <div class="side-menu">
         <div class="side-menu__header">
+            <button class="toggle btn">
+                <i class="fas fa-bars toggle__bars"></i>
+            </button>
             <img src="#" alt="logo" class="side-menu__logo">
             <p class="side-menu__header-text">Cloud Mesh Editor</p>
-            <button class="close-side-menu btn">
-                <i class="fas fa-times icon"></i>
-            </button>
         </div>
         <div class="side-menu__content">
             <div class="models">
+                <p class="models__header-text">Models</p>
                 <div class="model first-model">
                     <p class="model__name">box</p>
-                    <div class="model__mode">
-                        <button data-mode="translate" class="btn model__mode-btn model__translation active-mode"><i class="fas fa-expand-arrows-alt model__mode-icon icon"></i>Translate</button>
-                        <button data-mode="rotate" class="btn model__mode-btn model__rotation"><i class="fas fa-sync model__mode-icon icon"></i>Rotate</button>
-                        <button data-mode="scale" class="btn model__mode-btn model__scaling"><i class="fas fa-expand model__mode-icon icon"></i>Scale</button>
-                        <button data-mode="edit" class="btn model__mode-btn model__editing"><i class="fas fa-arrows-alt model__mode-icon icon"></i>Edit</button>
+                    <div class="model__mode btn-group">
+                        <button data-mode="translate" class="btn model__mode-btn model__translation active-mode">Translate</button>
+                        <button data-mode="rotate" class="btn model__mode-btn model__rotation">Rotate</button>
+                        <button data-mode="scale" class="btn model__mode-btn model__scaling">Scale</button>
+                        <button data-mode="edit" class="btn model__mode-btn model__editing">Edit</button>
                     </div>
                 </div>
             </div>

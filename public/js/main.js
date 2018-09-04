@@ -1,7 +1,6 @@
 ﻿// DOM ELEMENTS
-let openMenu = document.querySelector('.open-side-menu');
+let toggle = document.querySelector('.toggle');
 let sideMenu = document.querySelector('.side-menu');
-let closeMenu = document.querySelector('.close-side-menu');
 let mode = document.querySelector('.model__mode');
 let modeButtons = document.querySelectorAll('.model__mode-btn');
 let upload = document.getElementById('.upload');
@@ -9,14 +8,19 @@ let upload = document.getElementById('.upload');
 
 
 /// handlers DOM elements
-openMenu.onclick = function() {
-    sideMenu.style.left = 0;
-    sideMenu.style.opacity = 1;
+let open = false;
+toggle.onclick = function() {
+    open = !open;
+    let bars = this.children[0];
+    if(open) {
+        bars.style.color = '#ffffff';
+        sideMenu.style.left = 0;
+    } else {
+        bars.style.color = '#000000';
+        sideMenu.style.left = -400 + 'px';
+    }
 }
-closeMenu.onclick = function () {
-    sideMenu.style.left = -400 + 'px';
-    sideMenu.style.opacity = 0;
-}
+
 mode.onclick = function(ev) {
     if(ev.target === this) return;
     [].forEach.call(modeButtons, function(el) {

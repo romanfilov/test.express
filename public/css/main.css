@@ -14,21 +14,25 @@ canvas {
     width: 400px;
     left: -400px;
     height: 100%;
-    border: 1px solid #000000;
-    background: #ffffff;
-    opacity: 0;
+    background: #4484ff;
     transition: all 0.5s;
 }
 .side-menu__header {
     display: flex;
     align-items: center;
-    justify-content: space-around;
-    background: #001b48;
+    padding: 20px;
+    justify-content: flex-end;
     color: #ffffff;
+    border-bottom: 1px solid #ffffff 
 }
+.side-menu__logo {
+  margin-right: 50px; 
+}
+
 .side-menu__header-text {
-    margin-left: 10px;
+    margin: 0 0 0 0;
 }
+
 .upload-field {
     display: flex;
     flex-direction: column;
@@ -45,55 +49,49 @@ canvas {
 .upload-field__text {
     margin: 10px 0;
 }
+.models {
+    padding: 20px 5px;
+    color: #ffffff;
+    border-bottom: 1px solid #ffffff;
+}
+.models__header-text {
+    font-size: 30px;
+}
 .model {
-    padding: 20px 10px;
     text-align: center;
-    border-bottom: 1px solid #000000;
 }
 .model__name {
     margin: 0 0 10px 0;
 }
-.model__mode {
-    display: flex;
-}
-.model__mode-btn {
-    width: 100px;
-    height: 40px;
-    margin: 0 5px;
-}
 .model__mode-icon {
     margin-right: 10px;
 }
+.model__mode-btn {
+    background: #ffffff;
+}
 .active-mode {
-    box-shadow: 0px 0px 5px 0 #000000;
+    background: #03ec13;
 }
 
-.open-side-menu {
-    position: absolute;
-    top: 10px;
-    left: 0;
-    width: 150px;
-    height: 50px;
-    background: #dde8f0;
-}
-
-.open-side-menu__icon {
-    margin-left: 10px;
-}
-.btn {
-    border: 0;
-    outline: 0;
-    background: #dde8f0;
+.toggle {
     display: flex;
-    justify-content: center;
     align-items: center;
+    flex-wrap: wrap;
+    position: fixed;
+    left: 10px;
+    background: none;
+    z-index: 1000;
+}
+.toggle__bars {
+    transition: color 0.5s;
+    font-size: 40px;
+    color: #000000;
 }
 
 .icon {
     font-size: 20px; 
 }
 
-.close-side-menu {
-    background: transparent;
-    color: #dde8f0;
+.btn:focus {
+    box-shadow: none;
 }
