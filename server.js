@@ -28,21 +28,21 @@ app.get('/', function(req, res){
 
 
 io.on('connection', function(socket){
-    // var path = './public/users/' + socket.id;
-    // fs.mkdirsSync(path + '/models');
-    // var uploader = new siofu();
-    // socket.on('disconnect', function(){
-    //     fs.removeSync(path);
-    // });
-    // var uploader = new siofu();
-    // uploader.dir = path + '/models';
-    // uploader.listen(socket);
-    // uploader.on('complete', function(ev) {
-    //     ev.file.clientDetail.path = ev.file.pathName;
-    // });
-    // uploader.on("error", function(event){
-    //     console.log("Error from uploader", event);
-    // });
+    var path = './public/users/' + socket.id;
+    fs.mkdirsSync(path + '/models');
+    var uploader = new siofu();
+    socket.on('disconnect', function(){
+        fs.removeSync(path);
+    });
+    var uploader = new siofu();
+    uploader.dir = path + '/models';
+    uploader.listen(socket);
+    uploader.on('complete', function(ev) {
+        ev.file.clientDetail.path = ev.file.pathName; 
+    });
+    uploader.on("error", function(event){
+        console.log("Error from uploader", event);
+    });
 });
 
 

@@ -1,29 +1,55 @@
 ﻿// DOM ELEMENTS
-let toggle = document.querySelector('.toggle');
-let sideMenu = document.querySelector('.side-menu');
-let mode = document.querySelector('.model__mode');
-let modeButtons = document.querySelectorAll('.model__mode-btn');
-let upload = document.getElementById('.upload');
+let selectors = {
+    toggle: document.querySelector('.toggle'),
+    sideMenu: document.querySelector('.side-menu'),
+    modes: document.querySelectorAll('.model__mode'),
+    modeButtons: document.querySelectorAll('.model__mode-btn'),
+    models: document.querySelector('.models'),
+    upload: document.getElementById('upload'),
+    dropField: document.querySelector('.drop-field'),
+    selectModel: document.querySelectorAll('.select-model'),
+    model: document.querySelectorAll('.model')
+};
 /// END DOM ELEMENTS
+
+/// Support variables
+
+let open = false;
+let modelOrder = 0;
+// end support variables
 
 
 /// handlers DOM elements
-let open = false;
-toggle.onclick = function() {
+
+selectors.toggle.onclick = function() {
     open = !open;
     let bars = this.children[0];
     if(open) {
         bars.style.color = '#ffffff';
-        sideMenu.style.left = 0;
+        selectors.sideMenu.style.left = 0;
     } else {
         bars.style.color = '#000000';
-        sideMenu.style.left = -400 + 'px';
+        selectors.sideMenu.style.left = -400 + 'px';
     }
 }
 
-mode.onclick = function(ev) {
+/// Add Mode Panel
+
+function addModel(ev) {
+    loadModel(ev.detail.path);
+    selectors.models.children[modelOrder].style.display = 'flex';
+    selectors.modes[0].children[0].classList.add('active-mode');
+    modelOrder++;
+    if(modelOrder === 2) {
+        selectors.dropField.style.display = 'none';
+    }
+}
+
+//// end
+
+function selectMode(ev) {
     if(ev.target === this) return;
-    [].forEach.call(modeButtons, function(el) {
+    [].forEach.call(selectors.modeButtons, function(el) {
         el.classList.remove('active-mode');
     });
     ev.target.closest('.model__mode-btn').classList.add('active-mode');
@@ -43,7 +69,51 @@ mode.onclick = function(ev) {
     }
 }
 
+function selectModel(ev) {
+    let modelOrder = ev.target.getAttribute('data-id');
+    transformControl.attach(models[modelOrder]);
+    for(let i = 0; i < selectors.models.children.length; i++) {
+        let model = selectors.models.children[i];
+        model.classList.remove('active');
+    }
+    for(let i = 0; i < selectors.modes.length; i++) {
+        for(let j = 0; j < selectors.modes[i].children.length; j++) {
+            let mode = selectors.modes[i].children[j];
+            mode.classList.remove('active-mode');
+            mode.setAttribute('disabled', true);
+        }
+    }
+    this.classList.add('active');
+    for(let i = 0; i < this.getElementsByClassName('model__mode')[0].children.length; i++) {
+        let mode = this.getElementsByClassName('model__mode')[0].children[i];
+        mode.removeAttribute('disabled');
+    }
+    this.getElementsByClassName('model__mode')[0].children[0].classList.add('active-mode');
+}
+
+function fileDrop(ev) {
+    upload.files = ev.dataTransfer.files;
+    ev.preventDefault();    
+}   
+
+function dragOver(ev) {
+    ev.preventDefault();
+}
+
+selectors.dropField.addEventListener('drop', fileDrop);
+selectors.dropField.addEventListener('dragover', dragOver);
+for(let i = 0; i < selectors.modes.length; i++) {
+    selectors.modes[i].addEventListener('click', selectMode);
+};
+for(let i = 0; i < selectors.selectModel.length; i++) {
+    selectors.selectModel[i].addEventListener('click', selectModel.bind(selectors.model[i]));
+};
+
 //// end handlers DOM elements
+
+
+
+
 
 // SOCKET
 let socket = io();
@@ -51,7 +121,7 @@ let socket = io();
 /////// ADD AFTER CONFIG SAVING NEW MODEL
 
 let uploader = new SocketIOFileUpload(socket);
-uploader.listenOnInput(document.getElementById("upload"));
+uploader.listenOnInput(selectors.upload);
 uploader.addEventListener('choose', function(ev){
     var isRightExt = /\.obj$|\.stl$/.test(ev.files[0].name);
     if(!isRightExt) {
@@ -61,7 +131,7 @@ uploader.addEventListener('choose', function(ev){
 });
 
 uploader.addEventListener('complete', function(ev) {
-    loadModel(ev.detail.path);
+    addModel(ev);
 });
 
 ////////////// END SOCKET
@@ -71,19 +141,12 @@ uploader.addEventListener('complete', function(ev) {
 /// SOLVING CAMERA ROTATION ISSUE WITH TRANSFORM CONTROLS
 let stopPropagationMock = null;
 const emptyFunction = function() {};
-
 function mockEvents(ev) {
     stopPropagationMock = ev.stopPropagation;
     ev.stopPropagation = emptyFunction;
 }
 
 /////////////
-
-/////////// DELETE AFTER CONFIG
-
-let path = 'public/models/cube.obj';
-
-
 
 /// THREE JS
 
@@ -125,7 +188,7 @@ const loader = new THREE.OBJLoader();
 
 // Transformation //
 const transformControl = new THREE.TransformControls(camera, renderer.domElement);
-
+transformControl.visible = false;
 // Transformation end //
 
 
@@ -148,7 +211,7 @@ let raycaster = new THREE.Raycaster();
 let mouse = new THREE.Vector2();
 let points = [];
 let index;
-let model;
+let currentModel;
 let moving;
 let clickToArrow;
 let modelIntersects;
@@ -156,6 +219,7 @@ let pointIntersects;
 let geometry;
 let vertices;
 let dragControls = new THREE.DragControls(points, camera, renderer.domElement);
+
 //// end variables
 
 // Load model //
@@ -175,6 +239,8 @@ function loadModel(path) {
                     geometry.mergeVertices();
                     models.push(model);
                     model.geometry = geometry;
+                    currentModel = model;
+                    transformControl.attach(model);
                 }
                 scene.add(object);
             });
@@ -190,6 +256,7 @@ function setMode(mode) {
         default:
             setEditMode(false);
             transformControl.setMode(mode);
+            break;
     }
 }
 
@@ -199,7 +266,7 @@ function setEditMode(activate) {
     if (activate) {
         transformControl.detach();
     } else {
-        transformControl.attach(model);
+        transformControl.attach(currentModel);
     }
 }
 
@@ -207,8 +274,7 @@ function onMouseClick(e) {
 	mouse.x = (e.clientX / window.innerWidth) * 2 - 1;
     mouse.y = - (e.clientY / window.innerHeight) * 2 + 1;
     clickToArrow = false;
-    moving = false;
-    
+    moving = false;  
     raycaster.setFromCamera(mouse, camera);
     modelIntersects = raycaster.intersectObjects(models);
     ///////////////
@@ -223,7 +289,7 @@ function onMouseClick(e) {
         pointIntersects = raycaster.intersectObjects(points);
         if (pointIntersects.length > 0) {
             dragControls.addEventListener('drag', function(ev) {;
-                geometry.vertices[point.index].copy(model.worldToLocal(point.position.clone()));
+                geometry.vertices[point.index].copy(currentModel.worldToLocal(point.position.clone()));
                 geometry.verticesNeedUpdate = true;
                 geometry.elementsNeedUpdate = true;
             })
@@ -232,7 +298,7 @@ function onMouseClick(e) {
             points.pop();
         }  
         if (points.length == 0 && modelIntersects.length > 0) {
-            model = modelIntersects[0].object;
+            currentModel = modelIntersects[0].object;
             point = getPoint(modelIntersects);
             if(point) {
                 dragControls.addEventListener('dragstart', function () {
@@ -247,8 +313,8 @@ function onMouseClick(e) {
             }
         }
     } else if (modelIntersects.length > 0) {
-        model = modelIntersects[0].object;
-        transformControl.attach(model);
+        currentModel = modelIntersects[0].object;
+        transformControl.attach(currentModel);
     }
 
     ///////////// end editing mode
@@ -262,7 +328,7 @@ function onMouseClick(e) {
 function getPoint(modelIntersects) {
     let face = modelIntersects[0].face.clone();
     geometry = modelIntersects[0].object.geometry;
-    let pointCoords = model.worldToLocal(modelIntersects[0].point);
+    let pointCoords = currentModel.worldToLocal(modelIntersects[0].point);
     let faceVertices = [];
     geometry.vertices.forEach(function(item, i) {
         if(i == face.a || i == face.b || i == face.c) {
@@ -279,7 +345,7 @@ function getPoint(modelIntersects) {
     })
     point = new THREE.Mesh( new THREE.SphereGeometry(0.1), new THREE.MeshBasicMaterial({color: 0x404040}));
     point.name = 'point';
-    point.position.copy(model.localToWorld(faceVertices[0]));
+    point.position.copy(currentModel.localToWorld(faceVertices[0]));
     point.index = faceVertices[0].index;
     return point;
 
@@ -296,7 +362,6 @@ function render() {
 // handlers //
 function transformMouseDown() {
     orbitControls.enabled = false;
-    model.remove(point);
 }
 function transformMouseUp() {
     clickToArrow = true;

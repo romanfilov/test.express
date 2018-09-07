@@ -16,6 +16,7 @@ canvas {
     height: 100%;
     background: #4484ff;
     transition: all 0.5s;
+    color: #ffffff;
 }
 .side-menu__header {
     display: flex;
@@ -33,7 +34,7 @@ canvas {
     margin: 0 0 0 0;
 }
 
-.upload-field {
+.drop-field {
     display: flex;
     flex-direction: column;
     padding: 20px 0;
@@ -43,23 +44,29 @@ canvas {
     border: 1px dashed #001b48;
 
 }
-.upload-field__icon {
+.drop-field__icon {
     font-size: 50px;
 }
-.upload-field__text {
+.drop-field__text {
     margin: 10px 0;
 }
 .models {
     padding: 20px 5px;
-    color: #ffffff;
-    border-bottom: 1px solid #ffffff;
 }
-.models__header-text {
+.content-header-text {
     font-size: 30px;
+    margin: 0;
 }
 .model {
+    display: none;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
     text-align: center;
+    padding: 20px 0;
+    border-bottom: 1px solid #ffffff;
 }
+
 .model__name {
     margin: 0 0 10px 0;
 }
@@ -94,4 +101,7 @@ canvas {
 
 .btn:focus {
     box-shadow: none;
+}
+.select-model {
+    align-self: flex-start;
 }

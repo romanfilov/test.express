@@ -1,5 +1,6 @@
 <!DOCTYPE html>
 <html>
+
 <head>
     <meta charset=utf-8>
     <title>Mesh</title>
@@ -7,6 +8,7 @@
     <link rel="stylesheet" type="text/css" href="bootstrap\dist\css\bootstrap.min.css">
     <link rel="stylesheet" type="text/css" href="public/css/main.css">
 </head>
+
 <body>
     <div class="side-menu">
         <div class="side-menu__header">
@@ -17,21 +19,40 @@
             <p class="side-menu__header-text">Cloud Mesh Editor</p>
         </div>
         <div class="side-menu__content">
+            <p class="content-header-text">Models</p>
             <div class="models">
-                <p class="models__header-text">Models</p>
                 <div class="model first-model">
                     <p class="model__name">box</p>
+                    <button class="select-model" data-id="0">Model 1</button>
+                    <div class="model__view btn-group">
+                        <button data-view="solid" class="btn model__view-btn">Solid</button>
+                        <button data-view="wireframe" class="btn model__view-btn">Wireframe</button>
+                    </div>
                     <div class="model__mode btn-group">
-                        <button data-mode="translate" class="btn model__mode-btn model__translation active-mode">Translate</button>
+                        <button data-mode="translate" class="btn model__mode-btn model__translation">Translate</button>
+                        <button data-mode="rotate" class="btn model__mode-btn model__rotation">Rotate</button>
+                        <button data-mode="scale" class="btn model__mode-btn model__scaling">Scale</button>
+                        <button data-mode="edit" class="btn model__mode-btn model__editing">Edit</button>
+                    </div>
+                </div>
+                <div class="model second-model">
+                    <p class="model__name">box</p>
+                    <button class="select-model" data-id="1">Model 2</button>
+                    <div class="model__view btn-group">
+                        <button data-view="solid" class="btn model__view-btn">Solid</button>
+                        <button data-view="wireframe" class="btn model__view-btn">Wireframe</button>
+                    </div>
+                    <div class="model__mode btn-group">
+                        <button data-mode="translate" class="btn model__mode-btn model__translation">Translate</button>
                         <button data-mode="rotate" class="btn model__mode-btn model__rotation">Rotate</button>
                         <button data-mode="scale" class="btn model__mode-btn model__scaling">Scale</button>
                         <button data-mode="edit" class="btn model__mode-btn model__editing">Edit</button>
                     </div>
                 </div>
             </div>
-            <div class="side-menu__upload-field upload-field">
-                <i class="fas fa-file-upload upload-field__icon"></i>
-                <p class="upload-field__text">Upload file (only .obj and .stl)</p>
+            <div class="side-menu__drop-field drop-field">
+                <i class="fas fa-file-upload drop-field__icon"></i>
+                <p class="drop-field__text">Upload file (only .obj and .stl)</p>
                 <input type="file" class="upload" id="upload">
             </div>
         </div>
@@ -45,4 +66,5 @@
 <script type="text/javascript" src="socket.io-client/dist/socket.io.js"></script>
 <script src="/siofu/client.js"></script>
 <script type="text/javascript" src="public/js/main.js"></script>
+
 </html>
