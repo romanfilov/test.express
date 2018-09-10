@@ -58,13 +58,13 @@ function selectMode(ev) {
             setMode('edit');
             break;
         case 'translate':
-            setMode('translate');
+            transformControl.setMode('translate');
             break;
         case 'rotate':
-            setMode('rotate');
+            transformControl.setMode('rotate');
             break;
         case 'scale':
-            setMode('scale');
+            transformControl.setMode('scale');
             break;
     }
 }
@@ -79,7 +79,7 @@ function selectModel(ev) {
         selectors.modes[index].children[i].removeAttribute('disabled');
     }
     currentModel = models[index];
-    transformControl.attach(models[index]);
+    transformControl.attach(currentModel);
 }
 
 function fileDrop(ev) {
@@ -322,8 +322,7 @@ function onMouseClick(e) {
             }
         }
     } else if (modelIntersects.length > 0) {
-        currentModel = modelIntersects[0].object;
-        transformControl.attach(currentModel);
+        selectors.selectModel[models.indexOf(modelIntersects[0].object)].click();
     }
 
     ///////////// end editing mode
