@@ -36,7 +36,7 @@ selectors.toggle.onclick = function() {
 /// Add Mode Panel
 
 function addModel(ev) {
-    loadModel(ev.detail.path);
+    loadModel(ev.detail);
     selectors.models.children[modelOrder].style.display = 'flex';
     selectors.modes[0].children[0].classList.add('active-mode');
     modelOrder++;
@@ -70,25 +70,16 @@ function selectMode(ev) {
 }
 
 function selectModel(ev) {
-    let modelOrder = ev.target.getAttribute('data-id');
-    transformControl.attach(models[modelOrder]);
-    for(let i = 0; i < selectors.models.children.length; i++) {
-        let model = selectors.models.children[i];
-        model.classList.remove('active');
+    let index = +ev.target.getAttribute('data-id');
+    [].forEach.call(selectors.modeButtons, function(el) {
+        el.classList.remove('active-mode');
+        el.setAttribute('disabled', true);
+    });
+    for (let i = 0; i < selectors.modes[index].children.length; i++) {
+        selectors.modes[index].children[i].removeAttribute('disabled');
     }
-    for(let i = 0; i < selectors.modes.length; i++) {
-        for(let j = 0; j < selectors.modes[i].children.length; j++) {
-            let mode = selectors.modes[i].children[j];
-            mode.classList.remove('active-mode');
-            mode.setAttribute('disabled', true);
-        }
-    }
-    this.classList.add('active');
-    for(let i = 0; i < this.getElementsByClassName('model__mode')[0].children.length; i++) {
-        let mode = this.getElementsByClassName('model__mode')[0].children[i];
-        mode.removeAttribute('disabled');
-    }
-    this.getElementsByClassName('model__mode')[0].children[0].classList.add('active-mode');
+    currentModel = models[index];
+    transformControl.attach(models[index]);
 }
 
 function fileDrop(ev) {
@@ -123,7 +114,7 @@ let socket = io();
 let uploader = new SocketIOFileUpload(socket);
 uploader.listenOnInput(selectors.upload);
 uploader.addEventListener('choose', function(ev){
-    var isRightExt = /\.obj$|\.stl$/.test(ev.files[0].name);
+    let isRightExt = /\.obj$|\.stl$/.test(ev.files[0].name);
     if(!isRightExt) {
         console.error('Wrong file extension');
         return false;
@@ -182,7 +173,8 @@ const ambientLight = new THREE.AmbientLight(0xffffff, 0.3);
 pointLight.position.set(1000, 500, 0);
 const pointLight2 = new THREE.PointLight(0xffffff, 0.5);
 pointLight2.position.set(-1000, -500, 0);
-const loader = new THREE.OBJLoader();
+const objLoader = new THREE.OBJLoader();
+const stlLoader = new THREE.STLLoader();
 /////// End settings
 
 
@@ -223,29 +215,46 @@ let dragControls = new THREE.DragControls(points, camera, renderer.domElement);
 //// end variables
 
 // Load model //
-function loadModel(path) {
-    loader.load(
-        path,   
-        function (object) {
-            object.traverse( function( model ) {
-                if( model instanceof THREE.Mesh ) {
-                    let material = new THREE.MeshLambertMaterial({color: 'blue'})
-                    model.material = material;
-                    model.material.side = THREE.DoubleSide;
-                    model.material.wireframe = false;
-                    let geometry = new THREE.Geometry ();
-                    geometry.fromBufferGeometry(model.geometry);
-                    geometry.center();
-                    geometry.mergeVertices();
-                    models.push(model);
-                    model.geometry = geometry;
-                    currentModel = model;
-                    transformControl.attach(model);
-                }
-                scene.add(object);
-            });
-        }
-    );
+function loadModel(detail) {
+    if(/\.obj$/.test(detail.name)) {
+        objLoader.load(
+            detail.path,   
+            function (object) {
+                object.traverse( function( model ) {
+                    if( model instanceof THREE.Mesh ) {
+                        let material = new THREE.MeshLambertMaterial({color: 'blue'})
+                        model.material = material;
+                        model.material.side = THREE.DoubleSide;
+                        model.material.wireframe = false;
+                        let geometry = new THREE.Geometry();
+                        geometry.fromBufferGeometry(model.geometry);
+                        geometry.center();
+                        geometry.mergeVertices();
+                        models.push(model);
+                        model.geometry = geometry;
+                        currentModel = model;
+                        transformControl.attach(model);
+                    }
+                    scene.add(object);
+                });
+            }
+        );
+    } else {
+        stlLoader.load(
+            detail.path,
+            function (geometry) {
+                let tempGeometry = new THREE.Geometry();
+                tempGeometry.fromBufferGeometry(geometry);
+                tempGeometry.mergeVertices();
+                tempGeometry.center();
+                let model = new THREE.Mesh(tempGeometry, new THREE.MeshLambertMaterial({color: 'blue'}));
+                models.push(model);
+                currentModel = model;
+                transformControl.attach(model);
+                scene.add(model);
+            }
+        );
+    } 
 }
 
 function setMode(mode) {
