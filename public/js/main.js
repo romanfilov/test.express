@@ -8,14 +8,22 @@ let selectors = {
     upload: document.getElementById('upload'),
     dropField: document.querySelector('.drop-field'),
     selectModel: document.querySelectorAll('.select-model'),
-    model: document.querySelectorAll('.model')
+    model: document.querySelectorAll('.model'),
+    progress: document.querySelector('.progress'),
+    progressContainer: document.querySelector('.progress-container'),
+    closeModel: document.querySelectorAll('.close-model'),
+    transform: document.querySelectorAll('.transform'),
+    transformInfo: document.querySelectorAll('.transform__info')
 };
 /// END DOM ELEMENTS
+
 
 /// Support variables
 
 let open = false;
-let modelOrder = 0;
+let modelsCount = 0;
+let order = 0;
+let modelHash;
 // end support variables
 
 
@@ -35,16 +43,61 @@ selectors.toggle.onclick = function() {
 
 /// Add Mode Panel
 
-function addModel(ev) {
-    loadModel(ev.detail);
-    selectors.models.children[modelOrder].style.display = 'flex';
-    selectors.modes[0].children[0].classList.add('active-mode');
-    modelOrder++;
-    if(modelOrder === 2) {
-        selectors.dropField.style.display = 'none';
-    }
+function addModel(data) {
+    loadModel(data.file);
+    modelHash = Math.random().toString(36).substring(2, 9);
+    selectors.closeModel[order].setAttribute('data-hash', modelHash);
+    selectors.selectModel[order].setAttribute('data-hash', modelHash);
+    selectors.models.children[order].style.display = 'flex';
+    order++;
+    selectors.progressContainer.style.display = 'none';
+    selectors.progress.firstElementChild.style.width = 0 + '%';
+    selectors.progress.firstElementChild.innerHTML = 0 + '%';
 }
 
+function selectModel(ev) {
+    let index = +ev.target.getAttribute('data-index');
+    let hashCode = ev.target.getAttribute('data-hash');
+    [].forEach.call(selectors.modeButtons, function(el) {
+        el.classList.remove('active-mode');
+        el.setAttribute('disabled', true);
+    });
+    [].forEach.call(selectors.transformInfo, function(el) {
+        el.setAttribute('disabled', true);
+    });
+    for (let i = 0; i < selectors.modes[index].children.length; i++) {
+        selectors.modes[index].children[i].removeAttribute('disabled');
+    }
+    for (let i = 0; i < selectors.transform[index].children.length; i++) {
+        if(!/transform__info/.test(selectors.transform[index].children[i].className)) continue;
+        
+    }
+    let foundModel = getModelByHash(hashCode);
+    currentModel = foundModel;
+    transformControl.attach(foundModel);
+}
+
+function closeModel(ev) {
+    order = +ev.target.getAttribute('data-order');
+    let hashCode = ev.target.getAttribute('data-hash');
+    let foundModel = getModelByHash(hashCode);
+    scene.remove(foundModel);
+    models.splice(models.indexOf(foundModel), 1);
+    ev.target.closest('.model').style.display = 'none';
+    modelsCount--;
+    selectors.dropField.style.display = 'flex';
+    selectors.dropField.style.order = order;
+    transformControl.detach();
+}
+
+
+function getModelByHash(hashCode) {
+    for (let i = 0; i < models.length; i++) {
+        if(models[i].hashCode === hashCode) {
+            return models[i];
+        }
+    }
+}
 //// end
 
 function selectMode(ev) {
@@ -58,29 +111,18 @@ function selectMode(ev) {
             setMode('edit');
             break;
         case 'translate':
-            transformControl.setMode('translate');
+            setMode('translate');
             break;
         case 'rotate':
-            transformControl.setMode('rotate');
+            setMode('rotate');
             break;
         case 'scale':
-            transformControl.setMode('scale');
+            setMode('scale');
             break;
     }
 }
 
-function selectModel(ev) {
-    let index = +ev.target.getAttribute('data-id');
-    [].forEach.call(selectors.modeButtons, function(el) {
-        el.classList.remove('active-mode');
-        el.setAttribute('disabled', true);
-    });
-    for (let i = 0; i < selectors.modes[index].children.length; i++) {
-        selectors.modes[index].children[i].removeAttribute('disabled');
-    }
-    currentModel = models[index];
-    transformControl.attach(currentModel);
-}
+
 
 function fileDrop(ev) {
     upload.files = ev.dataTransfer.files;
@@ -99,7 +141,9 @@ for(let i = 0; i < selectors.modes.length; i++) {
 for(let i = 0; i < selectors.selectModel.length; i++) {
     selectors.selectModel[i].addEventListener('click', selectModel.bind(selectors.model[i]));
 };
-
+for(let i = 0; i < selectors.closeModel.length; i++) {
+    selectors.closeModel[i].addEventListener('click', closeModel);
+};
 //// end handlers DOM elements
 
 
@@ -109,7 +153,14 @@ for(let i = 0; i < selectors.selectModel.length; i++) {
 // SOCKET
 let socket = io();
 
-/////// ADD AFTER CONFIG SAVING NEW MODEL
+socket.on('upload.progress', function(data) {
+    selectors.progressContainer.style.display = 'flex';
+    selectors.progress.firstElementChild.style.width = data.percentage + '%';
+    selectors.progress.firstElementChild.innerHTML = data.percentage + '%';
+    if(data.percentage === 100) {
+        setTimeout(addModel, 1000, data);
+    }
+});
 
 let uploader = new SocketIOFileUpload(socket);
 uploader.listenOnInput(selectors.upload);
@@ -120,11 +171,14 @@ uploader.addEventListener('choose', function(ev){
         return false;
     }
 });
-
-uploader.addEventListener('complete', function(ev) {
-    addModel(ev);
+uploader.addEventListener('start', function() {
+    modelsCount++;
+    selectors.progress.style.display = 'flex';
+    selectors.progress.style.order = order;
+    if(modelsCount >= 2) {
+        selectors.dropField.style.display = 'none';
+    }
 });
-
 ////////////// END SOCKET
 
 
@@ -215,10 +269,10 @@ let dragControls = new THREE.DragControls(points, camera, renderer.domElement);
 //// end variables
 
 // Load model //
-function loadModel(detail) {
-    if(/\.obj$/.test(detail.name)) {
+function loadModel(file) {
+    if(/\.obj$/.test(file.name)) {
         objLoader.load(
-            detail.path,   
+            file.pathName,   
             function (object) {
                 object.traverse( function( model ) {
                     if( model instanceof THREE.Mesh ) {
@@ -230,31 +284,33 @@ function loadModel(detail) {
                         geometry.fromBufferGeometry(model.geometry);
                         geometry.center();
                         geometry.mergeVertices();
-                        models.push(model);
+                        model.hashCode = modelHash;
                         model.geometry = geometry;
                         currentModel = model;
+                        models.push(model);
                         transformControl.attach(model);
+                        scene.add(model);
                     }
-                    scene.add(object);
                 });
             }
         );
     } else {
         stlLoader.load(
-            detail.path,
+            file.pathName,
             function (geometry) {
                 let tempGeometry = new THREE.Geometry();
                 tempGeometry.fromBufferGeometry(geometry);
                 tempGeometry.mergeVertices();
                 tempGeometry.center();
                 let model = new THREE.Mesh(tempGeometry, new THREE.MeshLambertMaterial({color: 'blue'}));
+                model.hashCode = modelHash;
                 models.push(model);
                 currentModel = model;
                 transformControl.attach(model);
                 scene.add(model);
             }
         );
-    } 
+    }
 }
 
 function setMode(mode) {
@@ -322,7 +378,12 @@ function onMouseClick(e) {
             }
         }
     } else if (modelIntersects.length > 0) {
-        selectors.selectModel[models.indexOf(modelIntersects[0].object)].click();
+        for (let i = 0; i < selectors.selectModel.length; i++) {
+            let selectHash = selectors.selectModel[i].getAttribute('data-hash');
+            if(selectHash === modelIntersects[0].object.hashCode) {
+                selectors.selectModel[i].click();
+            }
+        }
     }
 
     ///////////// end editing mode

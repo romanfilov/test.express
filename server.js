@@ -35,12 +35,18 @@ io.on('connection', function(socket){
     var uploader = new siofu();
     uploader.dir = path + '/models';
     uploader.listen(socket);
+    uploader.on('progress', function(ev) {
+        socket.emit('upload.progress', {
+            file: ev.file,
+            percentage:(ev.file.bytesLoaded / ev.file.size) * 100
+        })
+    });
     uploader.on('complete', function(ev) {
         ev.file.clientDetail.path = ev.file.pathName;
         ev.file.clientDetail.name = ev.file.name;
     });
-    uploader.on("error", function(event){
-        console.log("Error from uploader", event);
+    uploader.on("error", function(ev){
+        console.log("Error from uploader", ev);
     });
 });
 

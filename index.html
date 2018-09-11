@@ -23,7 +23,12 @@
             <div class="models">
                 <div class="model first-model">
                     <p class="model__name">box</p>
-                    <button class="select-model" data-id="0">Model 1</button>
+                    <div class="model__top-btns">
+                        <button type="button" class="select-model" data-index="0">Model 1</button>
+                        <button type="button" class="close close-model" data-order="0">
+                            &times;
+                        </button>
+                    </div>
                     <div class="model__view btn-group">
                         <button data-view="solid" class="btn model__view-btn">Solid</button>
                         <button data-view="wireframe" class="btn model__view-btn">Wireframe</button>
@@ -33,11 +38,46 @@
                         <button data-mode="rotate" class="btn model__mode-btn model__rotation">Rotate</button>
                         <button data-mode="scale" class="btn model__mode-btn model__scaling">Scale</button>
                         <button data-mode="edit" class="btn model__mode-btn model__editing">Edit</button>
+                    </div>
+                    <div class="model__transform transform">
+                        <p class="transform__translate-header">Translate</p>
+                        <div class="transform__info transform__translate">
+                            <label class="axis-label" for="x-axis">X:</label>
+                            <input class="axis" type="text" value="0" disabled="true">
+                            <label class="axis-label" for="y-axis">Y:</label>
+                            <input class="axis" type="text" value="0" disabled="true">
+                            <label class="axis-label" for="z-axis">Z:</label>
+                            <input class="axis" type="text" value="0" disabled="true">
+                        </div>
+                        <p class="transform__translate-header">Rotate</p>
+                        <div class="transform__info transform__rotate"> 
+                            <label class="axis-label" for="x-axis">X:</label>
+                            <input class="axis" type="text" value="0" disabled="true">
+                            <label class="axis-label" for="y-axis">Y:</label>
+                            <input class="axis" type="text" value="0" disabled="true">
+                            <label class="axis-label" for="z-axis">Z:</label>
+                            <input class="axis" type="text" value="0" disabled="true">
+                        </div>
+                        <p class="transform__translate-header">Scale</p>
+                        <div class="transform__info transform__scale">
+                            <label class="axis-label" for="x-axis">X:</label>
+                            <input class="axis" type="text" value="1" disabled="true">
+                            <label class="axis-label" for="y-axis">Y:</label>
+                            <input class="axis" type="text" value="1" disabled="true">
+                            <label class="axis-label" for="z-axis">Z:</label>
+                            <input class="axis" type="text" value="1" disabled="true">
+                        </div>
+                        <button class="apply-transform">Apply</button>
                     </div>
                 </div>
                 <div class="model second-model">
                     <p class="model__name">box</p>
-                    <button class="select-model" data-id="1">Model 2</button>
+                    <div class="model__top-btns">
+                        <button type="button" class="select-model" data-index="1">Model 2</button>
+                        <button type="button" class="close close-model" data-order="1">
+                            &times;
+                        </button>
+                    </div>
                     <div class="model__view btn-group">
                         <button data-view="solid" class="btn model__view-btn">Solid</button>
                         <button data-view="wireframe" class="btn model__view-btn">Wireframe</button>
@@ -48,12 +88,47 @@
                         <button data-mode="scale" class="btn model__mode-btn model__scaling">Scale</button>
                         <button data-mode="edit" class="btn model__mode-btn model__editing">Edit</button>
                     </div>
+                    <div class="model__transform transform">
+                        <p class="transform__translate-header">Translate</p>
+                        <div class="transform__info transform__translate">
+                            <label class="axis-label" for="x-axis">X:</label>
+                            <input class="axis" type="text" value="0" disabled="true">
+                            <label class="axis-label" for="y-axis">Y:</label>
+                            <input class="axis" type="text" value="0" disabled="true">
+                            <label class="axis-label" for="z-axis">Z:</label>
+                            <input class="axis" type="text" value="0" disabled="true">
+                        </div>
+                        <p class="transform__translate-header">Rotate</p>
+                        <div class="transform__info transform__rotate"> 
+                            <label class="axis-label" for="x-axis">X:</label>
+                            <input class="axis" type="text" value="0" disabled="true">
+                            <label class="axis-label" for="y-axis">Y:</label>
+                            <input class="axis" type="text" value="0" disabled="true">
+                            <label class="axis-label" for="z-axis">Z:</label>
+                            <input class="axis" type="text" value="0" disabled="true">
+                        </div>
+                        <p class="transform__translate-header">Scale</p>
+                        <div class="transform__info transform__scale">
+                            <label class="axis-label" for="x-axis">X:</label>
+                            <input class="axis" type="text" value="1" disabled="true">
+                            <label class="axis-label" for="y-axis">Y:</label>
+                            <input class="axis" type="text" value="1" disabled="true">
+                            <label class="axis-label" for="z-axis">Z:</label>
+                            <input class="axis" type="text" value="1" disabled="true">
+                        </div>
+                        <button class="apply-transform">Apply</button>
+                    </div>
                 </div>
-            </div>
-            <div class="side-menu__drop-field drop-field">
-                <i class="fas fa-file-upload drop-field__icon"></i>
-                <p class="drop-field__text">Upload file (only .obj and .stl)</p>
-                <input type="file" class="upload" id="upload">
+                <div class="progress-container">
+                    <div class="progress">
+                        <div class="progress-bar progress__bar" role="progressbar" style="width: 0%;">0%</div>
+                    </div>
+                </div>
+                <div class="side-menu__drop-field drop-field">
+                    <i class="fas fa-file-upload drop-field__icon"></i>
+                    <p class="drop-field__text">Upload file (only .obj and .stl)</p>
+                    <input type="file" class="upload" id="upload">
+                </div>
             </div>
         </div>
     </div>

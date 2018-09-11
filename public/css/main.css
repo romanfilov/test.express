@@ -42,7 +42,7 @@ canvas {
     align-items: center;
     justify-content: center;
     border: 1px dashed #001b48;
-
+    order: 2;
 }
 .drop-field__icon {
     font-size: 50px;
@@ -51,22 +51,35 @@ canvas {
     margin: 10px 0;
 }
 .models {
-    padding: 20px 5px;
+    padding: 0 5px;
+    display: flex;
+    flex-direction: column;
+}
+.first-model {
+    order: 0;
+}
+.second-model {
+    order: 1;
 }
 .content-header-text {
     font-size: 30px;
     margin: 0;
 }
 .model {
-    display: none;
+    display: flex;
     flex-direction: column;
     justify-content: center;
     align-items: center;
     text-align: center;
-    padding: 20px 0;
+    padding: 0 0 10px;
     border-bottom: 1px solid #ffffff;
 }
-
+.model__top-btns {
+    display: flex;
+    width: 100%;
+    justify-content: space-between;
+    align-items: center;
+}
 .model__name {
     margin: 0 0 10px 0;
 }
@@ -103,5 +116,37 @@ canvas {
     box-shadow: none;
 }
 .select-model {
-    align-self: flex-start;
+    
+}
+.close-model {
+    color: #ffffff;
+    font-size: 32px;
+    text-shadow: none;
+    opacity: 1;
+}
+.progress-container {
+    height: 187px;
+    display: none;
+    flex-direction: column;
+    justify-content: center;
+    order: 0;
+}
+.progress {
+    height: 30px;
+    display: none;
+}
+.transform {
+    width: 100%;
+}
+
+.transform__translate-header {
+    width: 100%;
+    margin: 10px 0 5px;
+}
+.axis {
+    margin-left: 5px;
+    width: 80px;
+}
+.axis-label {
+    margin: 0 0 0 10px; 
 }
