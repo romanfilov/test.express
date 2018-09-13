@@ -152,7 +152,6 @@ function selectMode(ev) {
             break;
     }
     if(currentModel.mode !== 'edit') {
-        scene.remove(group);
         scene.remove(point);
     }
 }
@@ -409,7 +408,6 @@ function onMouseClick(e) {
             points.pop();
         }  
         if (points.length == 0 && modelIntersects.length > 0) {
-            currentModel = modelIntersects[0].object;
             point = getPoint(modelIntersects);
             if(point) {
                 dragControls.addEventListener('dragstart', function () {
@@ -423,7 +421,8 @@ function onMouseClick(e) {
                 scene.add(point);
             }
         }
-    } else if (modelIntersects.length > 0) {
+    } 
+    if (modelIntersects.length > 0) {
         for (let i = 0; i < selectors.selectModel.length; i++) {
             let selectHash = selectors.selectModel[i].getAttribute('data-hash');
             if(selectHash === modelIntersects[0].object.hashCode) {
