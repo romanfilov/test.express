@@ -137,15 +137,11 @@ canvas {
 }
 .transform {
     width: 100%;
-    display: flex;
-    flex-direction: column;
-    align-items: center;
 }
-.transform__info {
-    margin: 5px 0;
-}
-.transform__info-header {
-    margin: 0;
+
+.transform__translate-header {
+    width: 100%;
+    margin: 10px 0 5px;
 }
 .axis {
     margin-left: 5px;
@@ -153,7 +149,4 @@ canvas {
 }
 .axis-label {
     margin: 0 0 0 10px; 
-}
-.apply-transform {
-    align-self: flex-end;
 }

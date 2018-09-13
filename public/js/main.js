@@ -12,8 +12,8 @@ let selectors = {
     progress: document.querySelector('.progress'),
     progressContainer: document.querySelector('.progress-container'),
     closeModel: document.querySelectorAll('.close-model'),
-    axis: document.querySelectorAll('.axis'),
-    applyTransform: document.querySelectorAll('.apply-transform')
+    transform: document.querySelectorAll('.transform'),
+    transformInfo: document.querySelectorAll('.transform__info')
 };
 /// END DOM ELEMENTS
 
@@ -24,9 +24,6 @@ let open = false;
 let modelsCount = 0;
 let order = 0;
 let modelHash;
-let translateAxis;
-let rotateAxis;
-let scaleAxis;
 // end support variables
 
 
@@ -59,41 +56,25 @@ function addModel(data) {
 }
 
 function selectModel(ev) {
-    let hashCode = ev.target.getAttribute('data-hash');
-    let foundModel = getModelByHash(hashCode);
-    if(currentModel.hashCode === foundModel.hashCode) return;
-    foundModel.mode = currentModel.mode;
-    currentModel = foundModel;
-    if(!editModeActive) transformControl.attach(foundModel);
     let index = +ev.target.getAttribute('data-index');
+    let hashCode = ev.target.getAttribute('data-hash');
     [].forEach.call(selectors.modeButtons, function(el) {
         el.classList.remove('active-mode');
         el.setAttribute('disabled', true);
     });
-    [].forEach.call(selectors.axis, function(el) {
-        el.setAttribute('disabled', true);
-    });
-    [].forEach.call(selectors.applyTransform, function(el) {
+    [].forEach.call(selectors.transformInfo, function(el) {
         el.setAttribute('disabled', true);
     });
     for (let i = 0; i < selectors.modes[index].children.length; i++) {
         selectors.modes[index].children[i].removeAttribute('disabled');
     }
-    let axis = this.closest('.model').querySelectorAll('.axis');
-    for (let i = 0; i < axis.length; i++) {
-        axis[i].removeAttribute('disabled');
+    for (let i = 0; i < selectors.transform[index].children.length; i++) {
+        if(!/transform__info/.test(selectors.transform[index].children[i].className)) continue;
+        
     }
-    this.closest('.model').querySelector('.model__mode-btn[data-mode="'+ currentModel.mode +'"]').classList.add('active-mode');
-    this.closest('.model').querySelector('.apply-transform').removeAttribute('disabled');
-    translateAxis = ev.target.closest('.model').querySelector('.transform__translate').querySelectorAll('.axis');  
-    rotateAxis = ev.target.closest('.model').querySelector('.transform__rotate').querySelectorAll('.axis');  
-    scaleAxis = ev.target.closest('.model').querySelector('.transform__scale').querySelectorAll('.axis');
-}
-
-function applyTransform() {
-   currentModel.position.set(+translateAxis[0].value, +translateAxis[1].value, +translateAxis[2].value);
-   currentModel.rotation.set(+rotateAxis[0].value, +rotateAxis[1].value, +rotateAxis[2].value);
-   currentModel.scale.set(+scaleAxis[0].value, +scaleAxis[1].value, +scaleAxis[2].value);
+    let foundModel = getModelByHash(hashCode);
+    currentModel = foundModel;
+    transformControl.attach(foundModel);
 }
 
 function closeModel(ev) {
@@ -120,6 +101,7 @@ function getModelByHash(hashCode) {
 //// end
 
 function selectMode(ev) {
+    if(ev.target === this) return;
     [].forEach.call(selectors.modeButtons, function(el) {
         el.classList.remove('active-mode');
     });
@@ -127,19 +109,15 @@ function selectMode(ev) {
     switch(ev.target.closest('.model__mode-btn').getAttribute('data-mode')) {
         case 'edit':
             setMode('edit');
-            currentModel.mode = 'edit';
             break;
         case 'translate':
             setMode('translate');
-            currentModel.mode = 'translate';
             break;
         case 'rotate':
             setMode('rotate');
-            currentModel.mode = 'rotate';
             break;
         case 'scale':
             setMode('scale');
-            currentModel.mode = 'scale';
             break;
     }
 }
@@ -161,13 +139,10 @@ for(let i = 0; i < selectors.modes.length; i++) {
     selectors.modes[i].addEventListener('click', selectMode);
 };
 for(let i = 0; i < selectors.selectModel.length; i++) {
-    selectors.selectModel[i].addEventListener('click', selectModel.bind(selectors.selectModel[i]));
+    selectors.selectModel[i].addEventListener('click', selectModel.bind(selectors.model[i]));
 };
 for(let i = 0; i < selectors.closeModel.length; i++) {
     selectors.closeModel[i].addEventListener('click', closeModel);
-};
-for(let i = 0; i < selectors.applyTransform.length; i++) {
-    selectors.applyTransform[i].addEventListener('click', applyTransform);
 };
 //// end handlers DOM elements
 
@@ -280,8 +255,8 @@ let models = [];
 let point = null;
 let raycaster = new THREE.Raycaster();
 let mouse = new THREE.Vector2();
-let group = new THREE.Group();
 let points = [];
+let index;
 let currentModel;
 let moving;
 let clickToArrow;
@@ -289,14 +264,10 @@ let modelIntersects;
 let pointIntersects;
 let geometry;
 let vertices;
-let dragControls;
-let faceVertices;
-let distances;
+let dragControls = new THREE.DragControls(points, camera, renderer.domElement);
+
 //// end variables
 
-/// delete after change editting mode
-loadModel({name: 'cube.obj', pathName: 'public/models/cube.obj'});
-/////
 // Load model //
 function loadModel(file) {
     if(/\.obj$/.test(file.name)) {
@@ -305,8 +276,10 @@ function loadModel(file) {
             function (object) {
                 object.traverse( function( model ) {
                     if( model instanceof THREE.Mesh ) {
-                        let material = new THREE.MeshLambertMaterial({color: 'blue', vertexColors: THREE.FaceColors,  overdraw: true})
+                        let material = new THREE.MeshLambertMaterial({color: 'blue'})
                         model.material = material;
+                        model.material.side = THREE.DoubleSide;
+                        model.material.wireframe = false;
                         let geometry = new THREE.Geometry();
                         geometry.fromBufferGeometry(model.geometry);
                         geometry.center();
@@ -314,8 +287,8 @@ function loadModel(file) {
                         model.hashCode = modelHash;
                         model.geometry = geometry;
                         currentModel = model;
-                        currentModel.mode = transformControl.getMode();
                         models.push(model);
+                        transformControl.attach(model);
                         scene.add(model);
                     }
                 });
@@ -333,7 +306,7 @@ function loadModel(file) {
                 model.hashCode = modelHash;
                 models.push(model);
                 currentModel = model;
-                currentModel.mode = transformControl.getMode();
+                transformControl.attach(model);
                 scene.add(model);
             }
         );
@@ -362,11 +335,6 @@ function setEditMode(activate) {
     }
 }
 
-/// delete
-
-
-
-
 function onMouseClick(e) {
 	mouse.x = (e.clientX / window.innerWidth) * 2 - 1;
     mouse.y = - (e.clientY / window.innerHeight) * 2 + 1;
@@ -385,22 +353,18 @@ function onMouseClick(e) {
         }
         pointIntersects = raycaster.intersectObjects(points);
         if (pointIntersects.length > 0) {
-            dragControls.addEventListener('drag', function(ev) {
-                let position = point.position.clone();
-                group.position.copy(position);
-                for (let i = 0; i < faceVertices.length; i++) {
-                    geometry.vertices[faceVertices[i].index].copy(currentModel.localToWorld(group.position));
-                }
+            dragControls.addEventListener('drag', function(ev) {;
+                geometry.vertices[point.index].copy(currentModel.worldToLocal(point.position.clone()));
                 geometry.verticesNeedUpdate = true;
                 geometry.elementsNeedUpdate = true;
             })
         } else if (points.length > 0 && pointIntersects.length === 0) {
-            
-            points = [];
+            scene.remove(scene.getObjectByName('point'));
+            points.pop();
         }  
         if (points.length == 0 && modelIntersects.length > 0) {
+            currentModel = modelIntersects[0].object;
             point = getPoint(modelIntersects);
-            dragControls = new THREE.DragControls(points, camera, renderer.domElement);
             if(point) {
                 dragControls.addEventListener('dragstart', function () {
                     orbitControls.enabled = false;
@@ -410,26 +374,16 @@ function onMouseClick(e) {
                     orbitControls.enabled = true;
                 });
                 points.push(point);
-                scene.add(group);
+                scene.add(point);
             }
         }
-    } 
-    if (modelIntersects.length > 0) {
-
-        ///// Add after change editting mode
-
-        // for (let i = 0; i < selectors.selectModel.length; i++) {
-        //     let selectHash = selectors.selectModel[i].getAttribute('data-hash');
-        //     if(selectHash === modelIntersects[0].object.hashCode) {
-        //         selectors.selectModel[i].click();
-        //         break;
-        //     }
-        // }
-
-        /////////
-        //// delete after editting mode
-        currentModel = modelIntersects[0].object;
-        /////
+    } else if (modelIntersects.length > 0) {
+        for (let i = 0; i < selectors.selectModel.length; i++) {
+            let selectHash = selectors.selectModel[i].getAttribute('data-hash');
+            if(selectHash === modelIntersects[0].object.hashCode) {
+                selectors.selectModel[i].click();
+            }
+        }
     }
 
     ///////////// end editing mode
@@ -441,34 +395,29 @@ function onMouseClick(e) {
 ////// EDITING MODE CREATE POINT
 /////////////// 
 function getPoint(modelIntersects) {
-    geometry = modelIntersects[0].object.geometry;
     let face = modelIntersects[0].face.clone();
-    face.centroid = new THREE.Vector3();
-    face.centroid.add(geometry.vertices[face.a]);
-    face.centroid.add(geometry.vertices[face.b]);
-    face.centroid.add(geometry.vertices[face.c]);
-    face.centroid.divideScalar(3);
-    faceVertices = [];
-    faceVertices.push(geometry.vertices[face.a].clone());
-    faceVertices.push(geometry.vertices[face.b].clone());
-    faceVertices.push(geometry.vertices[face.c].clone());
-    faceVertices.forEach(function(vertex) {
-        vertex.centerDistance = face.centroid.distanceTo(vertex);
-    });
-    faceVertices[0].index = face.a;
-    faceVertices[1].index = face.b;
-    faceVertices[2].index = face.c;
-    for (let i = 0; i < faceVertices.length; i++) {
-        point = new THREE.Mesh( new THREE.SphereGeometry(0.1), new THREE.MeshBasicMaterial({color: 0x404040}));
-        point.name = 'point';
-        point.position.copy(modelIntersects[0].object.localToWorld(faceVertices[i]));
-        point.index = faceVertices[i].index;
-        group.add(point);
-    }
+    geometry = modelIntersects[0].object.geometry;
+    let pointCoords = currentModel.worldToLocal(modelIntersects[0].point);
+    let faceVertices = [];
+    geometry.vertices.forEach(function(item, i) {
+        if(i == face.a || i == face.b || i == face.c) {
+            var selItem = item.clone();
+            selItem.index = i;
+            faceVertices.push(selItem); 
+        }
+    })
+    faceVertices.forEach(function(item) {
+        item.distance = pointCoords.distanceTo(item);
+    })
+    faceVertices.sort(function(a, b) {
+        return a.distance - b.distance;
+    })
     point = new THREE.Mesh( new THREE.SphereGeometry(0.1), new THREE.MeshBasicMaterial({color: 0x404040}));
-    point.position.copy(modelIntersects[0].object.localToWorld(face.centroid));
-    scene.add(point);
+    point.name = 'point';
+    point.position.copy(currentModel.localToWorld(faceVertices[0]));
+    point.index = faceVertices[0].index;
     return point;
+
 }
 
 //////////////////////////////////////// END EDITING MODE
@@ -488,19 +437,6 @@ function transformMouseUp() {
     orbitControls.enabled = true;
 }
 
-///// Add after change editting mode
-// function transformChange() {
-//     translateAxis[0].value = currentModel.position.x.toFixed(2);
-//     translateAxis[1].value = currentModel.position.y.toFixed(2);
-//     translateAxis[2].value = currentModel.position.z.toFixed(2);
-//     rotateAxis[0].value = currentModel.rotation.x.toFixed(2);
-//     rotateAxis[1].value = currentModel.rotation.y.toFixed(2);
-//     rotateAxis[2].value = currentModel.rotation.z.toFixed(2);
-//     scaleAxis[0].value = currentModel.scale.x.toFixed(2);
-//     scaleAxis[1].value = currentModel.scale.y.toFixed(2);
-//     scaleAxis[2].value = currentModel.scale.z.toFixed(2);
-// }
-//////
 function onMouseMoving() {
     moving = true;
 }
@@ -526,7 +462,6 @@ function onResizeWindow() {
 // events //
 transformControl.addEventListener('mouseDown', transformMouseDown);
 transformControl.addEventListener('mouseUp', transformMouseUp);
-//transformControl.addEventListener('objectChange', transformChange);
 renderer.domElement.addEventListener('mousedown', onMouseClick);
 renderer.domElement.addEventListener('mousemove', retoreEvents);
 renderer.domElement.addEventListener('mousemove', onMouseMoving);
