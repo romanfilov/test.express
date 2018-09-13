@@ -12,8 +12,8 @@ let selectors = {
     progress: document.querySelector('.progress'),
     progressContainer: document.querySelector('.progress-container'),
     closeModel: document.querySelectorAll('.close-model'),
-    transform: document.querySelectorAll('.transform'),
-    transformInfo: document.querySelectorAll('.transform__info')
+    axis: document.querySelectorAll('.axis'),
+    applyTransform: document.querySelectorAll('.apply-transform')
 };
 /// END DOM ELEMENTS
 
@@ -24,6 +24,9 @@ let open = false;
 let modelsCount = 0;
 let order = 0;
 let modelHash;
+let translateAxis;
+let rotateAxis;
+let scaleAxis;
 // end support variables
 
 
@@ -53,31 +56,41 @@ function addModel(data) {
     selectors.progressContainer.style.display = 'none';
     selectors.progress.firstElementChild.style.width = 0 + '%';
     selectors.progress.firstElementChild.innerHTML = 0 + '%';
+    reset();
 }
 
+
 function selectModel(ev) {
-    let index = +ev.target.getAttribute('data-index');
     let hashCode = ev.target.getAttribute('data-hash');
-    [].forEach.call(selectors.modeButtons, function(el) {
-        el.classList.remove('active-mode');
-        el.setAttribute('disabled', true);
-    });
-    [].forEach.call(selectors.transformInfo, function(el) {
-        el.setAttribute('disabled', true);
-    });
+    let foundModel = getModelByHash(hashCode);
+    foundModel.mode = currentModel.mode;
+    currentModel = foundModel;
+    if(!editModeActive) transformControl.attach(foundModel);
+    let index = +ev.target.getAttribute('data-index');
+    reset();
     for (let i = 0; i < selectors.modes[index].children.length; i++) {
         selectors.modes[index].children[i].removeAttribute('disabled');
     }
-    for (let i = 0; i < selectors.transform[index].children.length; i++) {
-        if(!/transform__info/.test(selectors.transform[index].children[i].className)) continue;
-        
+    let axis = this.closest('.model').querySelectorAll('.axis');
+    for (let i = 0; i < axis.length; i++) {
+        axis[i].removeAttribute('disabled');
     }
-    let foundModel = getModelByHash(hashCode);
-    currentModel = foundModel;
-    transformControl.attach(foundModel);
+    this.closest('.model').querySelector('.model__mode-btn[data-mode="'+ currentModel.mode +'"]').classList.add('active-mode');
+    this.closest('.model').querySelector('.apply-transform').removeAttribute('disabled');
+    translateAxis = ev.target.closest('.model').querySelector('.transform__translate').querySelectorAll('.axis');  
+    rotateAxis = ev.target.closest('.model').querySelector('.transform__rotate').querySelectorAll('.axis');  
+    scaleAxis = ev.target.closest('.model').querySelector('.transform__scale').querySelectorAll('.axis');
+
 }
 
-function closeModel(ev) {
+function applyTransform() {
+    currentModel.position.set(+translateAxis[0].value, +translateAxis[1].value, +translateAxis[2].value);
+    currentModel.rotation.set(+rotateAxis[0].value, +rotateAxis[1].value, +rotateAxis[2].value);
+    currentModel.scale.set(+scaleAxis[0].value, +scaleAxis[1].value, +scaleAxis[2].value);
+ }
+ 
+
+ function closeModel(ev) {
     order = +ev.target.getAttribute('data-order');
     let hashCode = ev.target.getAttribute('data-hash');
     let foundModel = getModelByHash(hashCode);
@@ -91,6 +104,7 @@ function closeModel(ev) {
 }
 
 
+
 function getModelByHash(hashCode) {
     for (let i = 0; i < models.length; i++) {
         if(models[i].hashCode === hashCode) {
@@ -98,10 +112,23 @@ function getModelByHash(hashCode) {
         }
     }
 }
+
+function reset() {
+    [].forEach.call(selectors.modeButtons, function(el) {
+        el.classList.remove('active-mode');
+        el.setAttribute('disabled', true);
+    });
+    [].forEach.call(selectors.axis, function(el) {
+        el.setAttribute('disabled', true);
+    });
+    [].forEach.call(selectors.applyTransform, function(el) {
+        el.setAttribute('disabled', true);
+    });
+}
+
 //// end
 
 function selectMode(ev) {
-    if(ev.target === this) return;
     [].forEach.call(selectors.modeButtons, function(el) {
         el.classList.remove('active-mode');
     });
@@ -109,18 +136,27 @@ function selectMode(ev) {
     switch(ev.target.closest('.model__mode-btn').getAttribute('data-mode')) {
         case 'edit':
             setMode('edit');
+            currentModel.mode = 'edit';
             break;
         case 'translate':
             setMode('translate');
+            currentModel.mode = 'translate';
             break;
         case 'rotate':
             setMode('rotate');
+            currentModel.mode = 'rotate';
             break;
         case 'scale':
             setMode('scale');
+            currentModel.mode = 'scale';
             break;
     }
+    if(currentModel.mode !== 'edit') {
+        scene.remove(group);
+        scene.remove(point);
+    }
 }
+
 
 
 
@@ -276,20 +312,20 @@ function loadModel(file) {
             function (object) {
                 object.traverse( function( model ) {
                     if( model instanceof THREE.Mesh ) {
-                        let material = new THREE.MeshLambertMaterial({color: 'blue'})
+                        let material = new THREE.MeshLambertMaterial({color: 'blue', vertexColors: THREE.FaceColors,  overdraw: true})
                         model.material = material;
-                        model.material.side = THREE.DoubleSide;
-                        model.material.wireframe = false;
                         let geometry = new THREE.Geometry();
                         geometry.fromBufferGeometry(model.geometry);
                         geometry.center();
                         geometry.mergeVertices();
+                        geometry.computeBoundingBox();
                         model.hashCode = modelHash;
                         model.geometry = geometry;
                         currentModel = model;
+                        currentModel.mode = transformControl.getMode();
                         models.push(model);
-                        transformControl.attach(model);
                         scene.add(model);
+                        setCamera(model);
                     }
                 });
             }
@@ -301,16 +337,22 @@ function loadModel(file) {
                 let tempGeometry = new THREE.Geometry();
                 tempGeometry.fromBufferGeometry(geometry);
                 tempGeometry.mergeVertices();
+                tempGeometry.computeBoundingBox();
                 tempGeometry.center();
                 let model = new THREE.Mesh(tempGeometry, new THREE.MeshLambertMaterial({color: 'blue'}));
                 model.hashCode = modelHash;
                 models.push(model);
                 currentModel = model;
-                transformControl.attach(model);
+                currentModel.mode = transformControl.getMode();
                 scene.add(model);
+                setCamera(model);
             }
         );
     }
+}
+
+function setCamera(model) {
+    camera.position.set(0, 0, model.geometry.boundingBox.max.z * 2 + 5);
 }
 
 function setMode(mode) {
@@ -324,6 +366,7 @@ function setMode(mode) {
             break;
     }
 }
+
 
 var editModeActive = false;
 function setEditMode(activate) {
