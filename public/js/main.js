@@ -175,10 +175,13 @@ for(let i = 0; i < selectors.modes.length; i++) {
     selectors.modes[i].addEventListener('click', selectMode);
 };
 for(let i = 0; i < selectors.selectModel.length; i++) {
-    selectors.selectModel[i].addEventListener('click', selectModel.bind(selectors.model[i]));
+    selectors.selectModel[i].addEventListener('click', selectModel.bind(selectors.selectModel[i]));
 };
 for(let i = 0; i < selectors.closeModel.length; i++) {
     selectors.closeModel[i].addEventListener('click', closeModel);
+};
+for(let i = 0; i < selectors.applyTransform.length; i++) {
+    selectors.applyTransform[i].addEventListener('click', applyTransform);
 };
 //// end handlers DOM elements
 
@@ -472,6 +475,19 @@ function render() {
 }
 
 // handlers //
+
+function transformChange() {
+    translateAxis[0].value = currentModel.position.x.toFixed(2);
+    translateAxis[1].value = currentModel.position.y.toFixed(2);
+    translateAxis[2].value = currentModel.position.z.toFixed(2);
+    rotateAxis[0].value = currentModel.rotation.x.toFixed(2);
+    rotateAxis[1].value = currentModel.rotation.y.toFixed(2);
+    rotateAxis[2].value = currentModel.rotation.z.toFixed(2);
+    scaleAxis[0].value = currentModel.scale.x.toFixed(2);
+    scaleAxis[1].value = currentModel.scale.y.toFixed(2);
+    scaleAxis[2].value = currentModel.scale.z.toFixed(2);
+}
+
 function transformMouseDown() {
     orbitControls.enabled = false;
 }
@@ -505,6 +521,7 @@ function onResizeWindow() {
 // events //
 transformControl.addEventListener('mouseDown', transformMouseDown);
 transformControl.addEventListener('mouseUp', transformMouseUp);
+transformControl.addEventListener('objectChange', transformChange);
 renderer.domElement.addEventListener('mousedown', onMouseClick);
 renderer.domElement.addEventListener('mousemove', retoreEvents);
 renderer.domElement.addEventListener('mousemove', onMouseMoving);
