@@ -24,6 +24,7 @@ canvas {
     padding: 20px;
     justify-content: flex-end;
     color: #ffffff;
+    background: #001a41;
     border-bottom: 1px solid #ffffff 
 }
 .side-menu__logo {
@@ -89,8 +90,12 @@ canvas {
 .model__mode-btn {
     background: #ffffff;
 }
+.model__view {
+    margin-bottom: 5px; 
+}
 .active-mode {
-    background: #03ec13;
+    background: #02c70f;
+    color: #ffffff;
 }
 
 .toggle {
@@ -116,7 +121,14 @@ canvas {
     box-shadow: none;
 }
 .select-model {
-    
+    background: #df0000;
+    color: #ffffff;
+}
+.select-model:hover {
+    background: #b30202;
+}
+.select-model--active {
+    background: #b30202;
 }
 .close-model {
     color: #ffffff;
@@ -144,12 +156,24 @@ canvas {
 .transform__info {
     margin: 5px 0;
 }
-.transform__info-header {
+.transform__header {
     margin: 0;
 }
 .axis {
     margin-left: 5px;
     width: 80px;
+    border-width: 0 0 1px 0;
+    border-color: #000000;
+    color: #ffffff;
+    background: none;
+
+}
+.axis--no-valid {
+    outline: 1px solid #df0000;
+    color: #df0000;
+}
+.axis:disabled {
+    color: #000000;
 }
 .axis-label {
     margin: 0 0 0 10px; 

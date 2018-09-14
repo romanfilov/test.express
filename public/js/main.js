@@ -13,7 +13,8 @@ let selectors = {
     progressContainer: document.querySelector('.progress-container'),
     closeModel: document.querySelectorAll('.close-model'),
     axis: document.querySelectorAll('.axis'),
-    applyTransform: document.querySelectorAll('.apply-transform')
+    applyTransform: document.querySelectorAll('.apply-transform'),
+    setModelView: document.querySelectorAll('.model__view-btn')
 };
 /// END DOM ELEMENTS
 
@@ -56,25 +57,26 @@ function addModel(data) {
     selectors.progressContainer.style.display = 'none';
     selectors.progress.firstElementChild.style.width = 0 + '%';
     selectors.progress.firstElementChild.innerHTML = 0 + '%';
-    reset();
+    resetSelectors();
 }
 
 
 function selectModel(ev) {
     let hashCode = ev.target.getAttribute('data-hash');
     let foundModel = getModelByHash(hashCode);
-    foundModel.mode = currentModel.mode;
+    let modes = this.closest('.model').querySelectorAll('.model__mode-btn');
+    let axis = this.closest('.model').querySelectorAll('.axis');
+    foundModel.mode = currentModel ? currentModel.mode : 'translate';
     currentModel = foundModel;
     if(!editModeActive) transformControl.attach(foundModel);
-    let index = +ev.target.getAttribute('data-index');
-    reset();
-    for (let i = 0; i < selectors.modes[index].children.length; i++) {
-        selectors.modes[index].children[i].removeAttribute('disabled');
+    resetSelectors();
+    for (let i = 0; i < modes.length; i++) {
+        modes[i].removeAttribute('disabled');
     }
-    let axis = this.closest('.model').querySelectorAll('.axis');
     for (let i = 0; i < axis.length; i++) {
         axis[i].removeAttribute('disabled');
     }
+    this.classList.add('select-model--active');
     this.closest('.model').querySelector('.model__mode-btn[data-mode="'+ currentModel.mode +'"]').classList.add('active-mode');
     this.closest('.model').querySelector('.apply-transform').removeAttribute('disabled');
     translateAxis = ev.target.closest('.model').querySelector('.transform__translate').querySelectorAll('.axis');  
@@ -82,6 +84,7 @@ function selectModel(ev) {
     scaleAxis = ev.target.closest('.model').querySelector('.transform__scale').querySelectorAll('.axis');
 
 }
+
 
 function applyTransform() {
     currentModel.position.set(+translateAxis[0].value, +translateAxis[1].value, +translateAxis[2].value);
@@ -103,7 +106,15 @@ function applyTransform() {
     transformControl.detach();
 }
 
+function inputAxis(ev) {
+    this.value = this.value.replace(/[^(\d+(\.\d+)?)]+/, '');
+}
 
+function setModelView() {
+    let isWireframe = (this.getAttribute('data-wireframe') === 'true');
+    let index = this.closest('.model').getAttribute('data-index');
+    models[index].material.wireframe = isWireframe;
+}
 
 function getModelByHash(hashCode) {
     for (let i = 0; i < models.length; i++) {
@@ -113,10 +124,13 @@ function getModelByHash(hashCode) {
     }
 }
 
-function reset() {
+function resetSelectors() {
     [].forEach.call(selectors.modeButtons, function(el) {
         el.classList.remove('active-mode');
         el.setAttribute('disabled', true);
+    });
+    [].forEach.call(selectors.selectModel, function(el) {
+        el.classList.remove('select-model--active');
     });
     [].forEach.call(selectors.axis, function(el) {
         el.setAttribute('disabled', true);
@@ -180,8 +194,14 @@ for(let i = 0; i < selectors.closeModel.length; i++) {
     selectors.closeModel[i].addEventListener('click', closeModel);
 };
 for(let i = 0; i < selectors.applyTransform.length; i++) {
-    selectors.applyTransform[i].addEventListener('click', applyTransform);
+    selectors.applyTransform[i].addEventListener('click', applyTransform.bind(selectors.applyTransform[i]));
 };
+for(let i = 0; i < selectors.setModelView.length; i++) {
+    selectors.setModelView[i].addEventListener('click', setModelView.bind(selectors.setModelView[i]));
+};
+for (let i = 0; i < selectors.axis.length; i++) {
+    selectors.axis[i].addEventListener('input', inputAxis.bind(selectors.axis[i]));
+}
 //// end handlers DOM elements
 
 
@@ -194,7 +214,7 @@ let socket = io();
 socket.on('upload.progress', function(data) {
     selectors.progressContainer.style.display = 'flex';
     selectors.progress.firstElementChild.style.width = data.percentage + '%';
-    selectors.progress.firstElementChild.innerHTML = data.percentage + '%';
+    selectors.progress.firstElementChild.innerHTML = data.percentage.toFixed(0) + '%';
     if(data.percentage === 100) {
         setTimeout(addModel, 1000, data);
     }
@@ -238,13 +258,13 @@ const scene = new THREE.Scene();
 scene.background = new THREE.Color(0xffffff);
 
 /// camera settings
-const camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1000);
-camera.position.set(0, 0, 5);
+const camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 10000);
+camera.position.set(5, 5, 5);
 camera.up.set(0, 0, 1);
 ///// end camera settings
 
-const size = 100;
-const divisions = 10;
+const size = 10000;
+const divisions = 1000;
 const gridHelper = new THREE.GridHelper( size, divisions, 0x292929, 0xf0f0f0 );
 gridHelper.rotation.x = Math.PI / 2;
 
@@ -316,18 +336,15 @@ function loadModel(file) {
                     if( model instanceof THREE.Mesh ) {
                         let material = new THREE.MeshLambertMaterial({color: 'blue', vertexColors: THREE.FaceColors,  overdraw: true})
                         model.material = material;
-                        let geometry = new THREE.Geometry();
-                        geometry.fromBufferGeometry(model.geometry);
-                        geometry.center();
-                        geometry.mergeVertices();
-                        geometry.computeBoundingBox();
+                        let tempGeometry = new THREE.Geometry();
+                        tempGeometry.fromBufferGeometry(model.geometry);
                         model.hashCode = modelHash;
-                        model.geometry = geometry;
-                        currentModel = model;
-                        currentModel.mode = transformControl.getMode();
+                        model.geometry = tempGeometry;
+                        model.mode = transformControl.getMode();
                         models.push(model);
                         scene.add(model);
-                        setCamera(model);
+                        computeGeometry();
+                        setCameraAndAxes();
                     }
                 });
             }
@@ -338,23 +355,35 @@ function loadModel(file) {
             function (geometry) {
                 let tempGeometry = new THREE.Geometry();
                 tempGeometry.fromBufferGeometry(geometry);
-                tempGeometry.mergeVertices();
-                tempGeometry.computeBoundingBox();
-                tempGeometry.center();
                 let model = new THREE.Mesh(tempGeometry, new THREE.MeshLambertMaterial({color: 'blue'}));
                 model.hashCode = modelHash;
                 models.push(model);
-                currentModel = model;
-                currentModel.mode = transformControl.getMode();
+                model.mode = transformControl.getMode();
                 scene.add(model);
-                setCamera(model);
+                computeGeometry();
+                setCameraAndAxes();
             }
         );
     }
 }
 
-function setCamera(model) {
-    camera.position.set(0, 0, model.geometry.boundingBox.max.z * 2 + 5);
+function computeGeometry() {
+    models.forEach(function(model) {
+        model.geometry.center();
+        model.geometry.mergeVertices();
+        model.geometry.computeBoundingBox();
+        model.geometry.computeBoundingSphere();
+    });
+}
+
+function setCameraAndAxes() {
+    let boundings = [];
+    for (let i = 0; i < models.length; i++) {
+        boundings.push(models[i].geometry.boundingBox.max.z);
+    }
+    let maxBounding = Math.max.apply(null, boundings);
+    camera.position.set(5, 5, maxBounding * 2 + 5);
+    axes.scale.set(maxBounding / 2, maxBounding / 2, maxBounding / 2);
 }
 
 function setMode(mode) {
@@ -398,7 +427,7 @@ function onMouseClick(e) {
         }
         pointIntersects = raycaster.intersectObjects(points);
         if (pointIntersects.length > 0) {
-            dragControls.addEventListener('drag', function(ev) {;
+            dragControls.addEventListener('drag', function(ev) {
                 geometry.vertices[point.index].copy(currentModel.worldToLocal(point.position.clone()));
                 geometry.verticesNeedUpdate = true;
                 geometry.elementsNeedUpdate = true;
@@ -411,15 +440,16 @@ function onMouseClick(e) {
             point = getPoint(modelIntersects);
             if(point) {
                 dragControls.addEventListener('dragstart', function () {
+                    renderer.domElement.style.cursor = 'move';
                     orbitControls.enabled = false;
                     point.material.color.setHex(0xc10416);
                 });
                 dragControls.addEventListener('dragend', function () {
                     orbitControls.enabled = true;
                 });
-                points.push(point);
-                scene.add(point);
             }
+            points.push(point);
+            scene.add(point);
         }
     } 
     if (modelIntersects.length > 0) {
@@ -427,6 +457,7 @@ function onMouseClick(e) {
             let selectHash = selectors.selectModel[i].getAttribute('data-hash');
             if(selectHash === modelIntersects[0].object.hashCode) {
                 selectors.selectModel[i].click();
+                break;
             }
         }
     }
@@ -442,10 +473,12 @@ function onMouseClick(e) {
 function getPoint(modelIntersects) {
     let face = modelIntersects[0].face.clone();
     geometry = modelIntersects[0].object.geometry;
-    let pointCoords = currentModel.worldToLocal(modelIntersects[0].point);
+    geometry.computeBoundingBox();
+    geometry.computeBoundingSphere();
+    let pointCoords = modelIntersects[0].object.worldToLocal(modelIntersects[0].point);
     let faceVertices = [];
     geometry.vertices.forEach(function(item, i) {
-        if(i == face.a || i == face.b || i == face.c) {
+        if(i === face.a || i === face.b || i === face.c) {
             var selItem = item.clone();
             selItem.index = i;
             faceVertices.push(selItem); 
@@ -457,9 +490,9 @@ function getPoint(modelIntersects) {
     faceVertices.sort(function(a, b) {
         return a.distance - b.distance;
     })
-    point = new THREE.Mesh( new THREE.SphereGeometry(0.1), new THREE.MeshBasicMaterial({color: 0x404040}));
+    let point = new THREE.Mesh( new THREE.SphereGeometry(0.01 * geometry.boundingSphere.radius * 2), new THREE.MeshBasicMaterial({color: 0x404040}));
     point.name = 'point';
-    point.position.copy(currentModel.localToWorld(faceVertices[0]));
+    point.position.copy(modelIntersects[0].object.localToWorld(faceVertices[0]));
     point.index = faceVertices[0].index;
     return point;
 
