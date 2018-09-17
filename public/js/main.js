@@ -115,10 +115,19 @@ function inputAxis() {
 }
 
 
-function selectModelOnEnter(ev) {
+function ApplyAxleOnEnter(ev) {
     if(ev.keyCode === 13) { 
         ev.target.closest('.model').querySelector('.apply-transform').click();
     }
+}
+
+function onFocusAxis() {
+    orbitControls.enableKeys = false;
+    this.select();
+}
+
+function onFocusOut() {
+    orbitControls.enableKeys = true;
 }
 
 function setModelView() {
@@ -212,10 +221,10 @@ for(let i = 0; i < selectors.setModelView.length; i++) {
 };
 for (let i = 0; i < selectors.axis.length; i++) {
     selectors.axis[i].addEventListener('input', inputAxis.bind(selectors.axis[i]));
+    selectors.axis[i].addEventListener('keypress', ApplyAxleOnEnter);
+    selectors.axis[i].addEventListener('focus', onFocusAxis.bind(selectors.axis[i]));
+    selectors.axis[i].addEventListener('focusout', onFocusOut);
 }
-for(let i = 0; i < selectors.axis.length; i++) {
-    selectors.axis[i].addEventListener('keypress', selectModelOnEnter);
-};
 //// end handlers DOM elements
 
 
@@ -404,7 +413,7 @@ function setCameraAndAxes() {
         boundings.push(models[i].geometry.boundingBox.max.z);
     }
     let maxBounding = Math.max.apply(null, boundings);
-    camera.position.set(5, 5, maxBounding * 2 + 10);
+    camera.position.set(5, 5, maxBounding * 2 + 5);
     axes.scale.set(maxBounding / 2, maxBounding / 2, maxBounding / 2);
 }
 
@@ -413,7 +422,9 @@ function setCameraAndAxes() {
 
 manager.onLoad = function () {
     selectors.models.children[order].style.display = 'flex';
-    selectors.models.children[order].querySelector('.model__name').innerHTML = this.modelName.replace(/(.obj|.stl)/, '');
+    let modelName = this.modelName.replace(/(.obj|.stl)/, '');
+    modelName = modelName.charAt(0).toUpperCase() + modelName.substr(1);
+    selectors.models.children[order].querySelector('.model__name').innerHTML = modelName;
     selectors.progressContainer.style.display = 'none';
     selectors.progress.firstElementChild.style.width = 0 + '%';
     selectors.progress.firstElementChild.innerHTML = 0 + '%';

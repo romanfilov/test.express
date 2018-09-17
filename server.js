@@ -8,6 +8,7 @@ let io = require('socket.io').listen(http);
 
 
 http.listen(8080, function(){
+    fs.remove('./public/users');
     console.log('listening on *:8080');
 });
 
