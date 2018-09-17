@@ -49,14 +49,10 @@ selectors.toggle.onclick = function() {
 
 function addModel(data) {
     loadModel(data.file);
+    transformControl.detach();
     modelHash = Math.random().toString(36).substring(2, 9);
     selectors.closeModel[order].setAttribute('data-hash', modelHash);
     selectors.selectModel[order].setAttribute('data-hash', modelHash);
-    selectors.models.children[order].style.display = 'flex';
-    order++;
-    selectors.progressContainer.style.display = 'none';
-    selectors.progress.firstElementChild.style.width = 0 + '%';
-    selectors.progress.firstElementChild.innerHTML = 0 + '%';
     resetSelectors();
 }
 
@@ -82,15 +78,23 @@ function selectModel(ev) {
     translateAxis = ev.target.closest('.model').querySelector('.transform__translate').querySelectorAll('.axis');  
     rotateAxis = ev.target.closest('.model').querySelector('.transform__rotate').querySelectorAll('.axis');  
     scaleAxis = ev.target.closest('.model').querySelector('.transform__scale').querySelectorAll('.axis');
-
 }
 
 
 function applyTransform() {
+    let axis = this.closest('.model').querySelectorAll('.axis');
+    for (let i = 0; i < axis.length; i++) {
+        if(!/^[+-]?\d+(\.\d+)?$/.test(axis[i].value)) return console.error('Wrong input pattern of numbers');
+        if(axis[i].closest('.transform__scale') && +axis[i].value === 0) {
+            return console.error('Scale values ​​can not have a value of 0'); 
+        }
+        let tempValue = +axis[i].value;   
+        axis[i].value = tempValue.toFixed(2);
+    }
     currentModel.position.set(+translateAxis[0].value, +translateAxis[1].value, +translateAxis[2].value);
     currentModel.rotation.set(+rotateAxis[0].value, +rotateAxis[1].value, +rotateAxis[2].value);
     currentModel.scale.set(+scaleAxis[0].value, +scaleAxis[1].value, +scaleAxis[2].value);
- }
+}
  
 
  function closeModel(ev) {
@@ -106,8 +110,15 @@ function applyTransform() {
     transformControl.detach();
 }
 
-function inputAxis(ev) {
-    this.value = this.value.replace(/[^(\d+(\.\d+)?)]+/, '');
+function inputAxis() {
+    this.value = this.value.replace(/[^-.0-9]/, '');
+}
+
+
+function selectModelOnEnter(ev) {
+    if(ev.keyCode === 13) { 
+        ev.target.closest('.model').querySelector('.apply-transform').click();
+    }
 }
 
 function setModelView() {
@@ -202,6 +213,9 @@ for(let i = 0; i < selectors.setModelView.length; i++) {
 for (let i = 0; i < selectors.axis.length; i++) {
     selectors.axis[i].addEventListener('input', inputAxis.bind(selectors.axis[i]));
 }
+for(let i = 0; i < selectors.axis.length; i++) {
+    selectors.axis[i].addEventListener('keypress', selectModelOnEnter);
+};
 //// end handlers DOM elements
 
 
@@ -216,7 +230,7 @@ socket.on('upload.progress', function(data) {
     selectors.progress.firstElementChild.style.width = data.percentage + '%';
     selectors.progress.firstElementChild.innerHTML = data.percentage.toFixed(0) + '%';
     if(data.percentage === 100) {
-        setTimeout(addModel, 1000, data);
+        addModel(data);
     }
 });
 
@@ -230,12 +244,14 @@ uploader.addEventListener('choose', function(ev){
     }
 });
 uploader.addEventListener('start', function() {
+    if(modelsCount === 0) order = 0;
     modelsCount++;
-    selectors.progress.style.display = 'flex';
-    selectors.progress.style.order = order;
     if(modelsCount >= 2) {
         selectors.dropField.style.display = 'none';
     }
+    selectors.progress.style.display = 'flex';
+    selectors.progress.style.order = order;
+    
 });
 ////////////// END SOCKET
 
@@ -285,8 +301,9 @@ const ambientLight = new THREE.AmbientLight(0xffffff, 0.3);
 pointLight.position.set(1000, 500, 0);
 const pointLight2 = new THREE.PointLight(0xffffff, 0.5);
 pointLight2.position.set(-1000, -500, 0);
-const objLoader = new THREE.OBJLoader();
-const stlLoader = new THREE.STLLoader();
+const manager = new THREE.LoadingManager();
+const objLoader = new THREE.OBJLoader(manager);
+const stlLoader = new THREE.STLLoader(manager);
 /////// End settings
 
 
@@ -326,6 +343,9 @@ let dragControls = new THREE.DragControls(points, camera, renderer.domElement);
 
 //// end variables
 
+
+
+
 // Load model //
 function loadModel(file) {
     if(/\.obj$/.test(file.name)) {
@@ -345,6 +365,7 @@ function loadModel(file) {
                         scene.add(model);
                         computeGeometry();
                         setCameraAndAxes();
+                        manager.modelName = file.name;
                     }
                 });
             }
@@ -362,6 +383,7 @@ function loadModel(file) {
                 scene.add(model);
                 computeGeometry();
                 setCameraAndAxes();
+                manager.modelName = file.name;
             }
         );
     }
@@ -382,9 +404,24 @@ function setCameraAndAxes() {
         boundings.push(models[i].geometry.boundingBox.max.z);
     }
     let maxBounding = Math.max.apply(null, boundings);
-    camera.position.set(5, 5, maxBounding * 2 + 5);
+    camera.position.set(5, 5, maxBounding * 2 + 10);
     axes.scale.set(maxBounding / 2, maxBounding / 2, maxBounding / 2);
 }
+
+
+//// Operations after model loaded
+
+manager.onLoad = function () {
+    selectors.models.children[order].style.display = 'flex';
+    selectors.models.children[order].querySelector('.model__name').innerHTML = this.modelName.replace(/(.obj|.stl)/, '');
+    selectors.progressContainer.style.display = 'none';
+    selectors.progress.firstElementChild.style.width = 0 + '%';
+    selectors.progress.firstElementChild.innerHTML = 0 + '%';
+    order++;
+};
+
+//// end /////
+
 
 function setMode(mode) {
     switch(mode) {
@@ -411,9 +448,7 @@ function setEditMode(activate) {
 
 function onMouseClick(e) {
 	mouse.x = (e.clientX / window.innerWidth) * 2 - 1;
-    mouse.y = - (e.clientY / window.innerHeight) * 2 + 1;
-    clickToArrow = false;
-    moving = false;  
+    mouse.y = - (e.clientY / window.innerHeight) * 2 + 1; 
     raycaster.setFromCamera(mouse, camera);
     modelIntersects = raycaster.intersectObjects(models);
     ///////////////
@@ -452,7 +487,7 @@ function onMouseClick(e) {
             scene.add(point);
         }
     } 
-    if (modelIntersects.length > 0) {
+    if (modelIntersects.length > 0 && !clickToArrow) {
         for (let i = 0; i < selectors.selectModel.length; i++) {
             let selectHash = selectors.selectModel[i].getAttribute('data-hash');
             if(selectHash === modelIntersects[0].object.hashCode) {
@@ -461,7 +496,8 @@ function onMouseClick(e) {
             }
         }
     }
-
+    clickToArrow = false;
+    moving = false;
     ///////////// end editing mode
 }
 
@@ -490,12 +526,11 @@ function getPoint(modelIntersects) {
     faceVertices.sort(function(a, b) {
         return a.distance - b.distance;
     })
-    let point = new THREE.Mesh( new THREE.SphereGeometry(0.01 * geometry.boundingSphere.radius * 2), new THREE.MeshBasicMaterial({color: 0x404040}));
+    let point = new THREE.Mesh( new THREE.SphereGeometry(0.01 * geometry.boundingSphere.radius), new THREE.MeshBasicMaterial({color: 0x404040}));
     point.name = 'point';
     point.position.copy(modelIntersects[0].object.localToWorld(faceVertices[0]));
     point.index = faceVertices[0].index;
     return point;
-
 }
 
 //////////////////////////////////////// END EDITING MODE
@@ -521,10 +556,10 @@ function transformChange() {
 }
 
 function transformMouseDown() {
+    clickToArrow = true;
     orbitControls.enabled = false;
 }
-function transformMouseUp() {
-    clickToArrow = true;
+function transformMouseUp() {  
     orbitControls.enabled = true;
 }
 
